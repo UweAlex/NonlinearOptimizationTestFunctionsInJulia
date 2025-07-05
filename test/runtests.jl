@@ -1,4 +1,3 @@
-# test/runtests.jl
 using Test
 using NonlinearOptimizationTestFunctionsInJulia
 
@@ -14,6 +13,8 @@ using NonlinearOptimizationTestFunctionsInJulia
     @test ROSENBROCK_FUNCTION.is_scalable == true
     @test ROSENBROCK_FUNCTION.name == "Rosenbrock"
     @test ROSENBROCK_FUNCTION.info[:description] == "Rosenbrock function: f(x) = Σ 100(x_{i+1} - x_i^2)^2 + (1 - x_i)^2"
+    @test use_testfunction(ROSENBROCK_FUNCTION, [0.5, 0.5]).f ≈ 6.5
+    @test use_testfunction(ROSENBROCK_FUNCTION, [0.5, 0.5]).grad ≈ [-51.0, 50.0] atol=1e-6
 end
 
 @testset "Sphere Tests" begin
@@ -30,4 +31,6 @@ end
     @test SPHERE_FUNCTION.is_scalable == true
     @test SPHERE_FUNCTION.name == "Sphere"
     @test SPHERE_FUNCTION.info[:description] == "Sphere function: f(x) = Σx_i^2"
+    @test use_testfunction(SPHERE_FUNCTION, [1.0, 1.0]).f ≈ 2.0
+    @test use_testfunction(SPHERE_FUNCTION, [1.0, 1.0]).grad ≈ [2.0, 2.0] atol=1e-6
 end

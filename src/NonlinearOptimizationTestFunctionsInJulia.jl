@@ -1,4 +1,3 @@
-# src/NonlinearOptimizationTestFunctionsInJulia.jl
 module NonlinearOptimizationTestFunctionsInJulia
 
 using LinearAlgebra
@@ -17,6 +16,11 @@ struct TestFunction
     is_differentiable::Bool
     is_separable::Bool
     is_scalable::Bool
+end
+
+# Strukturierte Nutzung (makrofrei)
+function use_testfunction(tf::TestFunction, x::Vector{Float64})
+    return (f=tf.f(x), grad=tf.grad(x))
 end
 
 # Rosenbrock-Funktion
@@ -76,6 +80,6 @@ const SPHERE_FUNCTION = TestFunction(
 # Auto-Discovery
 const TEST_FUNCTIONS = TestFunction[ROSENBROCK_FUNCTION, SPHERE_FUNCTION]
 
-export rosenbrock, rosenbrock_gradient, ROSENBROCK_FUNCTION, sphere, sphere_gradient, SPHERE_FUNCTION, TEST_FUNCTIONS
+export rosenbrock, rosenbrock_gradient, ROSENBROCK_FUNCTION, sphere, sphere_gradient, SPHERE_FUNCTION, TEST_FUNCTIONS, use_testfunction
 
 end # module
