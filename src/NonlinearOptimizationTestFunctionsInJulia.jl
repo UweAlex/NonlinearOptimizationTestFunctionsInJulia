@@ -30,7 +30,7 @@ end
 
 # Rosenbrock-Funktion
 function rosenbrock(x::Vector{Float64})
-    return sum(100.0 * (x[i+1] - x_i^2)^2 + (1 - x[i])^2 for i in 1:length(x)-1)
+    return sum(100.0 * (x[i+1] - x[i]^2)^2 + (1 - x[i])^2 for i in 1:length(x)-1)
 end
 
 function rosenbrock_gradient(x::Vector{Float64})
