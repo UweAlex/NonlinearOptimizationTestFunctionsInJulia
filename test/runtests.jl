@@ -36,11 +36,11 @@ end
 end
 
 @testset "Filter Tests" begin
-  konvexe_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> tf.is_convex)
-  @test length(konvexe_funktionen) == 1
-  @test konvexe_funktionen[1].name == "Sphere"
+    konvexe_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> tf.is_convex)
+    @test length(konvexe_funktionen) == 1
+    @test konvexe_funktionen[1].name == "Sphere"
 
-  multimodale_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> tf.is_multimodal)
-  @test length(multimodale_funktionen) == 1
-  @test multimodale_funktionen[1].name == "Rosenbrock"
+    multimodale_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> tf.is_multimodal)
+    @test length(multimodale_funktionen) == 1
+    @test multimodale_funktionen[1].name == "Rosenbrock"
 end

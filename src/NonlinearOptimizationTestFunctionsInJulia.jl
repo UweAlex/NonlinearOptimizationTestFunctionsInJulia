@@ -23,6 +23,11 @@ function use_testfunction(tf::TestFunction, x::Vector{Float64})
     return (f=tf.f(x), grad=tf.grad(x))
 end
 
+# Strukturierte Filterung
+function filter_testfunctions(test_functions::Vector{TestFunction}, predicate::Function)
+    return [tf for tf in test_functions if predicate(tf)]
+end
+
 # Rosenbrock-Funktion
 function rosenbrock(x::Vector{Float64})
     return sum(100.0 * (x[i+1] - x[i]^2)^2 + (1 - x[i])^2 for i in 1:length(x)-1)
@@ -80,13 +85,6 @@ const SPHERE_FUNCTION = TestFunction(
 # Auto-Discovery
 const TEST_FUNCTIONS = TestFunction[ROSENBROCK_FUNCTION, SPHERE_FUNCTION]
 
-export rosenbrock, rosenbrock_gradient, ROSENBROCK_FUNCTION, sphere, sphere_gradient, SPHERE_FUNCTION, TEST_FUNCTIONS, use_testfunction
+export rosenbrock, rosenbrock_gradient, ROSENBROCK_FUNCTION, sphere, sphere_gradient, SPHERE_FUNCTION, TEST_FUNCTIONS, use_testfunction, filter_testfunctions
 
 end # module
-
-# Strukturierte Filterung
-function filter_testfunctions(test_functions::Vector{TestFunction}, predicate::Function)
-  return [tf for tf in test_functions if predicate(tf)]
-end
-
-export filter_testfunctions
