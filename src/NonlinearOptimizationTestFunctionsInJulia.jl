@@ -83,3 +83,10 @@ const TEST_FUNCTIONS = TestFunction[ROSENBROCK_FUNCTION, SPHERE_FUNCTION]
 export rosenbrock, rosenbrock_gradient, ROSENBROCK_FUNCTION, sphere, sphere_gradient, SPHERE_FUNCTION, TEST_FUNCTIONS, use_testfunction
 
 end # module
+
+# Strukturierte Filterung
+function filter_testfunctions(test_functions::Vector{TestFunction}, predicate::Function)
+  return [tf for tf in test_functions if predicate(tf)]
+end
+
+export filter_testfunctions

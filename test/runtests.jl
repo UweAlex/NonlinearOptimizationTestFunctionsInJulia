@@ -34,3 +34,13 @@ end
     @test use_testfunction(SPHERE_FUNCTION, [1.0, 1.0]).f ≈ 2.0
     @test use_testfunction(SPHERE_FUNCTION, [1.0, 1.0]).grad ≈ [2.0, 2.0] atol=1e-6
 end
+
+@testset "Filter Tests" begin
+  konvexe_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> tf.is_convex)
+  @test length(konvexe_funktionen) == 1
+  @test konvexe_funktionen[1].name == "Sphere"
+
+  multimodale_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> tf.is_multimodal)
+  @test length(multimodale_funktionen) == 1
+  @test multimodale_funktionen[1].name == "Rosenbrock"
+end
