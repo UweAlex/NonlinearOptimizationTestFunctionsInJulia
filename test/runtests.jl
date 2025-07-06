@@ -44,16 +44,3 @@ end
     @test length(multimodale_funktionen) == 1
     @test multimodale_funktionen[1].name == "Rosenbrock"
 end
-
-@testset "Apply Tests" begin
-    # Dummy-Optimierungsmethode, die den Startpunkt zurückgibt
-    dummy_method = tf -> tf.start
-    # Teste ohne Callback
-    apply_to_testfunctions(dummy_method, TEST_FUNCTIONS)
-    # Teste mit Callback
-    results = []
-    apply_to_testfunctions(dummy_method, TEST_FUNCTIONS, callback=(tf, res) -> push!(results, (tf.name, res)))
-    @test length(results) == 2
-    @test results[1] == ("Rosenbrock", [0.0, 0.0])
-    @test results[2] == ("Sphere", [0.0, 0.0])
-end

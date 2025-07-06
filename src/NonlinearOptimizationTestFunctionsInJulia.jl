@@ -30,7 +30,7 @@ end
 
 # Rosenbrock-Funktion
 function rosenbrock(x::Vector{Float64})
-    return sum(100.0 * (x[i+1] - x[i]^2)^2 + (1 - x[i])^2 for i in 1:length(x)-1)
+    return sum(100.0 * (x[i+1] - x_i^2)^2 + (1 - x[i])^2 for i in 1:length(x)-1)
 end
 
 function rosenbrock_gradient(x::Vector{Float64})
@@ -88,13 +88,3 @@ const TEST_FUNCTIONS = TestFunction[ROSENBROCK_FUNCTION, SPHERE_FUNCTION]
 export rosenbrock, rosenbrock_gradient, ROSENBROCK_FUNCTION, sphere, sphere_gradient, SPHERE_FUNCTION, TEST_FUNCTIONS, use_testfunction, filter_testfunctions
 
 end # module
-
-# Anwendung von Optimierungsmethoden
-function apply_to_testfunctions(optimization_method::Function, test_functions::Vector{TestFunction}; callback::Union{Function, Nothing}=nothing)
-    for tf in test_functions
-        result = optimization_method(tf)
-        callback !== nothing ? callback(tf, result) : println("Optimiert: $(tf.name) -> $result")
-    end
-end
-
-export apply_to_testfunctions
