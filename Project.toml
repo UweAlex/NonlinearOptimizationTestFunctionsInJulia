@@ -5,10 +5,12 @@ version = "0.1.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 LinearAlgebra = "1"
+Optim = "1.13.2"
 Test = "1.11.0"
 julia = "1"
 
