@@ -1,0 +1,63 @@
+# Datei: docs/interim_reports/20250708_1040.txt
+
+Zwischenbericht: NonlinearOptimizationTestFunctionsInJulia
+Datum: 8. Juli 2025, 10:40 AM CEST
+
+Kontext
+- Projekt: NonlinearOptimizationTestFunctionsInJulia
+- GitHub: https://github.com/UweAlex/NonlinearOptimizationTestFunctionsInJulia
+- Commit: 6746a98 (Updated README.md, source, tests, and interim report; added optimize_all_testfunctions.jl, 8. Juli 2025)
+- Neuer Commit: <neuer-commit-hash> (Added interim report 20250708_1040.txt with updated todo list, 8. Juli 2025)
+- Stand:
+  - Repository auf C:\Users\uweal\NonlinearOptimizationTestFunctionsInJulia.
+  - Julia-Version: 1.11.5.
+  - Tests: 60 Tests bestanden (28 für Rosenbrock, 28 für Sphere, 4 für filter_testfunctions).
+  - README.md auf Englisch mit korrigierter Markdown-Formatierung (Überarbeitung mit Gemini geplant, um Stärken hervorzuheben).
+  - Project.toml enthält Optim.jl (v1.13.2), LinearAlgebra und Test.
+  - optimize_all_testfunctions.jl enthält grad!-Wrapper für Optim.jl.
+  - using-Datei committet, Nutzen noch unklar.
+
+Erreichte Meilensteine
+- Test-Suite:
+  - Alle 60 Tests bestanden (Pkg.test()), einschließlich:
+    - 28 Tests für Rosenbrock (13 Grundtests, 8 Edge-Cases, 2 Fehlerbehandlung, 2 für min_position/min_value, 3 zusätzliche).
+    - 28 Tests für Sphere (15 Grundtests, 7 Edge-Cases, 1 Fehlerbehandlung, 2 für min_position/min_value, 3 zusätzliche).
+    - 4 Tests für filter_testfunctions.
+  - Edge-Case-Tests für NaN, ±Inf, Überlauf (1e308) und mehrdimensionale Eingaben hinzugefügt.
+- Neue Felder:
+  - min_position und min_value zur TestFunction-Struktur hinzugefügt (z. B. [1.0, 1.0] und 0.0 für Rosenbrock).
+- Fehlerbehebung:
+  - MethodError bei use_testfunction mit leerem Vektor korrigiert (Verwendung von Float64[]).
+  - Beschreibung von SPHERE_FUNCTION angepasst (Leerzeichen entfernt).
+  - Markdown-Darstellungsprobleme in README.md festgestellt: Grok 3 konnte Markdown-Dateien nicht fehlerfrei rendern, daher sorgfältige Formatierung und Entscheidung, Zwischenberichte als .txt zu speichern.
+- Performance:
+  - Vektorisierte Implementierung von rosenbrock und rosenbrock_gradient für bessere Skalierbarkeit.
+- Dokumentation:
+  - README.md auf Englisch aktualisiert mit neuen Features und Teststatus.
+  - Zwischenbericht 20250708_0938.txt hinzugefügt, mit Hinweis auf Markdown-Probleme und .txt-Präferenz für zukünftige Berichte.
+- Commit 6746a98: README.md, src/NonlinearOptimizationTestFunctionsInJulia.jl, test/runtests.jl, interim report (20250708_0938.txt), optimize_all_testfunctions.jl und using hochgeladen.
+
+Geplante Schritte und Todo-Liste
+- Automatische Gradiententests für jede Testfunktion:
+  - Gradienten (grad(x), z. B. rosenbrock_gradient, sphere_gradient) an fünf Punkten zwischen Startposition (z. B. [0.0, 0.0]) und Optimum (z. B. [1.0, 1.0] für Rosenbrock, [0.0, 0.0] für Sphere) mit FiniteDiff und Zygote testen.
+  - Automatisch für neue Funktionen (z. B. Ackley, Rastrigin) über filter_testfunctions oder TEST_FUNCTIONS laufen lassen.
+- grad!-Wrapper für Optim-Integration:
+  - grad(x)-Funktionen für Tests behalten, grad!(G, x)-Wrapper für Optim.jl bereitstellen (wie in optimize_all_testfunctions.jl mit G .= tf.grad(x)).
+  - Wrapper in NonlinearOptimizationTestFunctionsInJulia.jl (z. B. als get_grad!(tf)) oder optimize_all_testfunctions.jl integrieren, kompatibel mit filter_testfunctions oder TEST_FUNCTIONS.
+  - Ziel: Optim.jl-Schnittstelle für User vereinfachen, auch für neue Funktionen wie Ackley, Rastrigin.
+- Angeben im README.md:
+  - Vergleich mit anderen Paketen (CUTEst, BenchmarkFunctions.jl, Optim.jl, NLopt, OptimizationTestFunctions.jl) hinzufügen, der Stärken wie analytische Gradienten, Auto-Discovery mit filter_testfunctions, robuste Tests (60/60, inkl. Edge-Cases wie NaN, ±Inf, Unterlauf), grad!-Wrapper hervorhebt.
+  - Knackig und direkt, ohne fancy Formatierung – männliches Angeben, das die Vorteile klar macht.
+  - Plan: Mit Gemini überarbeiten, um den Vergleich und die Präsentation zu optimieren.
+- Bestehende Robustheitsziele:
+  - Optimierung mit Optim.jl für höherdimensionale Startpunkte (z. B. 10D) validieren.
+  - Numerische Stabilität für Unterlauf prüfen (z. B. rosenbrock([1e-308, 1e-308])).
+  - Vorbereitung für Julia General Registry.
+- Offene Punkte:
+  - Performance-Tests für höherdimensionale Eingaben (falls später relevant).
+  - Erweiterung um neue Testfunktionen (z. B. Ackley, Rastrigin) nach Konsolidierung.
+  - Klärung von using-Datei: Nützlich oder entfernen?
+
+Sofortige Schritte
+- Zwischenbericht 20250708_1040.txt mit aktualisierter Todo-Liste committen.
+- README.md mit Gemini überarbeiten, um Vergleich mit anderen Paketen hinzuzufügen.
