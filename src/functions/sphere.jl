@@ -1,4 +1,3 @@
-# src/functions/sphere.jl
 function sphere(x::Vector{Float64})
     if any(isnan.(x)) return NaN end
     if any(isinf.(x)) return Inf end
@@ -22,5 +21,5 @@ const SPHERE_FUNCTION = TestFunction(
         :math => "f(x) = \\sum_{i=1}^n x_i^2"
     ),
     "Sphere",
-    true, false, false, false, true, true, true
+    Set(["convex", "separable", "differentiable", "scalable"])
 )

@@ -10,13 +10,27 @@ struct TestFunction
     min_value::Float64
     info::Dict
     name::String
-    is_convex::Bool
-    is_concave::Bool
-    has_constraints::Bool
-    is_multimodal::Bool
-    is_differentiable::Bool
-    is_separable::Bool
-    is_scalable::Bool
+    properties::Set{String}  # Eigenschaften als Set, kleingeschrieben
+end
+
+# Prüft, ob eine Eigenschaft vorhanden ist (kleingeschrieben)
+function has_property(tf::TestFunction, prop::String)
+    return lowercase(prop) in tf.properties
+end
+
+# Fügt eine Eigenschaft hinzu und gibt ein neues TestFunction zurück
+function add_property(tf::TestFunction, prop::String)
+    new_properties = union(tf.properties, [lowercase(prop)])
+    return TestFunction(
+        tf.f,
+        tf.grad,
+        tf.start,
+        tf.min_position,
+        tf.min_value,
+        tf.info,
+        tf.name,
+        new_properties
+    )
 end
 
 # Hilfsfunktion zum Evaluieren einer Testfunktion
@@ -60,6 +74,6 @@ for tf in values(TEST_FUNCTIONS)
     @eval export $export_constant
 end
 
-export TEST_FUNCTIONS, filter_testfunctions, TestFunction, use_testfunction
+export TEST_FUNCTIONS, filter_testfunctions, TestFunction, use_testfunction, has_property, add_property
 
 end # module

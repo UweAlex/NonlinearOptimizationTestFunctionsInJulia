@@ -1,4 +1,3 @@
-# src/functions/rosenbrock.jl
 function rosenbrock(x::Vector{Float64})
     @assert length(x) >= 2 "Rosenbrock requires at least 2 dimensions"
     n = length(x)
@@ -28,6 +27,6 @@ const ROSENBROCK_FUNCTION = TestFunction(
         :description => "Rosenbrock function: f(x) = Σ 100(x_{i+1} - x_i^2)^2 + (1 - x_i)^2",
         :math => "f(x) = \\sum_{i=1}^{n-1} [100(x_{i+1} - x_i^2)^2 + (1 - x_i)^2]"
     ),
-    "Rosenbrock",  # Großschreibung für Konsistenz
-    false, false, false, true, true, false, true
+    "Rosenbrock",
+    Set(["multimodal", "differentiable", "scalable"])
 )
