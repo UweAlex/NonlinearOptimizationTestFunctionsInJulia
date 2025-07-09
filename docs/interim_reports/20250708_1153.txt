@@ -57,3 +57,37 @@ Nächste Schritte:
   @time optimize_all_testfunctions()
 - Ziel: <0,1 Sekunden für 2 Funktionen, <2 Sekunden für viele, alles transparent.
 - Optional: Probier PrecompileTools.jl für schnelleren Start.
+
+### Zwischenbericht - 08. Juli 2025, 13:07 CEST
+
+#### Projektstatus
+- Das Paket wird derzeit für Skalierbarkeit umstrukturiert. Testfunktionen werden in separaten Dateien unter `src/functions/` organisiert (z. B. `rosenbrock.jl`, `sphere.jl`). Jede Datei bleibt unter 100 Zeilen, um die Wartbarkeit zu gewährleisten.
+- Die Funktion `filter_testfunctions` wird verbessert, um nur die benötigten Funktionen dynamisch zu laden. Dies ermöglicht eine effiziente Handhabung von bis zu 1000 Testfunktionen.
+- Ein `grad!`-Wrapper wird implementiert, um die Integration mit Optimierungsbibliotheken wie `Optim.jl` zu vereinfachen.
+- Umfassende Tests werden entwickelt, darunter automatische Gradientenvalidierung, Stabilitätstests bei Unterlauf und Tests für den `grad!`-Wrapper.
+- Die leere `using`-Datei wurde im Commit `[main bfe9bd2]` entfernt, um das Repository aufzuräumen.
+
+#### Hauptziele
+- **Skalierbarkeit**: Effiziente Verwaltung von bis zu 1000 Testfunktionen mit minimalen Ladezeiten.
+- **Benutzertransparenz**: Interne Details (z. B. Dateistrukturen, Ladezeiten) bleiben für den Benutzer unsichtbar.
+- **Erweiterbarkeit**: Neue Funktionen können einfach durch Hinzufügen von Dateien in `src/functions/` eingefügt werden.
+- **Kompatibilität**: Das Paket soll über verschiedene Julia-Versionen hinweg ohne Probleme funktionieren.
+- **Robustheit**: Bereitstellung zuverlässiger Testfunktionen mit präzisen Gradienten und stabilem Verhalten bei extremen Eingaben.
+
+#### Todo-Liste
+1. **Automatische Gradiententests implementieren**: Verwendung von `FiniteDiff` und `Zygote` an mehreren Punkten zwischen Start und Optimum für jede Testfunktion.
+2. **Unterlauf-Stabilitätstests hinzufügen**: Tests für Funktionen und Gradienten mit sehr kleinen Eingaben (z. B. `[1e-308, 1e-308]`).
+3. **Tests für den `grad!`-Wrapper erstellen**: Sicherstellen, dass die Interaktion mit Optimierungsbibliotheken korrekt funktioniert.
+4. **Dynamische Ladetests entwickeln**: Überprüfung, ob `filter_testfunctions` Funktionen korrekt lädt und Ladezeiten verwaltet.
+5. **(Optional) Eigenschaftsprüfungen erweitern**: Für Felder von `TestFunction` wie `is_concave` und `has_constraints`.
+
+#### Nächste Schritte
+- Erstellen des Verzeichnisses `src/functions/` und Verschieben von `rosenbrock` und `sphere` in separate Dateien (z. B. `src/functions/rosenbrock.jl`).
+- Aktualisierung von `filter_testfunctions`, um `src/functions/` zu scannen und die benötigten Funktionen dynamisch zu laden.
+- Messung der Ladezeiten, um sicherzustellen, dass sie das Ziel von <2 Sekunden für 1000 Funktionen erfüllen.
+- (Optional) Experimentieren mit `PrecompileTools.jl`, um Startzeiten weiter zu reduzieren.
+
+#### Zusätzliche Hinweise
+- Das Paket wird reinen Julia-Code verwenden, um die Kompatibilität mit zukünftigen Julia-Versionen (z. B. „Julia 17.23“) zu gewährleisten.
+- Die Benutzerdokumentation wird aktualisiert und enthält Anweisungen zum Hinzufügen neuer Testfunktionen.
+- Das `README.md` wird mit einem Vergleich zu anderen Paketen erweitert, wobei Hauptmerkmale wie analytische Gradienten und automatische Erkennung hervorgehoben werden.
