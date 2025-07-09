@@ -3,7 +3,6 @@ using NonlinearOptimizationTestFunctionsInJulia
 
 @testset "NonlinearOptimizationTestFunctionsInJulia Tests" begin
     @testset "Rosenbrock Tests" begin
-        # Bestehende Tests (unverändert)
         @test rosenbrock([1.0, 1.0]) ≈ 0.0
         @test rosenbrock([0.5, 0.5]) ≈ 6.5
         @test rosenbrock([0.0, 0.0]) ≈ 1.0
@@ -28,20 +27,17 @@ using NonlinearOptimizationTestFunctionsInJulia
         @test_throws AssertionError use_testfunction(ROSENBROCK_FUNCTION, Float64[])
         @test ROSENBROCK_FUNCTION.min_position ≈ [1.0, 1.0]
         @test ROSENBROCK_FUNCTION.min_value ≈ 0.0
-
-        # Angepasste Eigenschaftentests
         @test has_property(ROSENBROCK_FUNCTION, "multimodal")
+        @test has_property(ROSENBROCK_FUNCTION, "non-convex")
+        @test has_property(ROSENBROCK_FUNCTION, "non-separable")
         @test has_property(ROSENBROCK_FUNCTION, "differentiable")
         @test has_property(ROSENBROCK_FUNCTION, "scalable")
         @test !has_property(ROSENBROCK_FUNCTION, "convex")
         @test !has_property(ROSENBROCK_FUNCTION, "separable")
-        @test !has_property(ROSENBROCK_FUNCTION, "concave")
         @test !has_property(ROSENBROCK_FUNCTION, "has_constraints")
-        @test has_property(ROSENBROCK_FUNCTION, "MULTIMODAL")  # Teste Kleinschreibung
     end
 
     @testset "Sphere Tests" begin
-        # Bestehende Tests (unverändert)
         @test sphere([0.0, 0.0]) ≈ 0.0
         @test sphere([1.0, 1.0]) ≈ 2.0
         @test sphere([-1.0, -1.0]) ≈ 2.0
@@ -66,38 +62,38 @@ using NonlinearOptimizationTestFunctionsInJulia
         @test_throws AssertionError use_testfunction(SPHERE_FUNCTION, Float64[])
         @test SPHERE_FUNCTION.min_position ≈ [0.0, 0.0]
         @test SPHERE_FUNCTION.min_value ≈ 0.0
-
-        # Angepasste Eigenschaftentests
+        @test has_property(SPHERE_FUNCTION, "unimodal")
         @test has_property(SPHERE_FUNCTION, "convex")
         @test has_property(SPHERE_FUNCTION, "separable")
         @test has_property(SPHERE_FUNCTION, "differentiable")
         @test has_property(SPHERE_FUNCTION, "scalable")
         @test !has_property(SPHERE_FUNCTION, "multimodal")
-        @test !has_property(SPHERE_FUNCTION, "concave")
+        @test !has_property(SPHERE_FUNCTION, "non-convex")
         @test !has_property(SPHERE_FUNCTION, "has_constraints")
-        @test has_property(SPHERE_FUNCTION, "CONVEX")  # Teste Kleinschreibung
     end
 
     @testset "Filter Tests" begin
-        # Angepasste Tests
-        konvexe_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> has_property(tf, "convex"))
+        konvexe_funktionen = filter_testfunctions(tf -> has_property(tf, "convex"))
         @test length(konvexe_funktionen) == 1
         @test konvexe_funktionen[1].name == "Sphere"
-
-        multimodale_funktionen = filter_testfunctions(TEST_FUNCTIONS, tf -> has_property(tf, "multimodal"))
+        multimodale_funktionen = filter_testfunctions(tf -> has_property(tf, "multimodal"))
         @test length(multimodale_funktionen) == 1
         @test multimodale_funktionen[1].name == "Rosenbrock"
     end
 
     @testset "Properties Manipulation Tests" begin
-        # Tests für add_property
-        new_tf = add_property(ROSENBROCK_FUNCTION, "test_property")
-        @test has_property(new_tf, "test_property")
-        @test has_property(new_tf, "multimodal")  # Alte Eigenschaften bleiben
-        @test has_property(new_tf, "TEST_PROPERTY")  # Teste Kleinschreibung
-        new_tf2 = add_property(SPHERE_FUNCTION, "TEST_PROPERTY")
-        @test has_property(new_tf2, "test_property")
+        new_tf = add_property(ROSENBROCK_FUNCTION, "continuous")
+        @test has_property(new_tf, "continuous")
+        @test has_property(new_tf, "multimodal")
+        new_tf2 = add_property(SPHERE_FUNCTION, "bounded")
+        @test has_property(new_tf2, "bounded")
         @test has_property(new_tf2, "convex")
-        @test has_property(new_tf2, "TEST_PROPERTY")  # Teste Kleinschreibung
+        @test_throws AssertionError add_property(ROSENBROCK_FUNCTION, "invalid")
+    end
+
+    @testset "All Functions Properties" begin
+        for tf in values(TEST_FUNCTIONS)
+            @test all(p in NonlinearOptimizationTestFunctionsInJulia.VALID_PROPERTIES for p in tf.properties)
+        end
     end
 end

@@ -1,6 +1,14 @@
 module NonlinearOptimizationTestFunctionsInJulia
 using LinearAlgebra
 
+# Zulässige Eigenschaften
+const VALID_PROPERTIES = Set([
+    "unimodal", "multimodal", "highly multimodal", "deceptive",
+    "convex", "non-convex", "quasi-convex", "strongly convex",
+    "separable", "non-separable", "partially separable", "fully non-separable",
+    "differentiable", "scalable", "continuous", "bounded", "has_constraints"
+])
+
 # Struktur für Testfunktionen
 struct TestFunction
     f::Function
@@ -10,36 +18,33 @@ struct TestFunction
     min_value::Float64
     info::Dict
     name::String
-    properties::Set{String}  # Eigenschaften als Set, kleingeschrieben
+    properties::Set{String}
+    function TestFunction(f, grad, start, min_position, min_value, info, name, properties)
+        @assert all(p in VALID_PROPERTIES for p in properties) "Invalid properties: $(setdiff(properties, VALID_PROPERTIES))."
+        new(f, grad, start, min_position, min_value, info, name, properties)
+    end
 end
 
-# Prüft, ob eine Eigenschaft vorhanden ist (kleingeschrieben)
+# Prüft, ob eine Eigenschaft vorhanden ist
 function has_property(tf::TestFunction, prop::String)
     return lowercase(prop) in tf.properties
 end
 
-# Fügt eine Eigenschaft hinzu und gibt ein neues TestFunction zurück
+# Fügt eine Eigenschaft hinzu
 function add_property(tf::TestFunction, prop::String)
-    new_properties = union(tf.properties, [lowercase(prop)])
-    return TestFunction(
-        tf.f,
-        tf.grad,
-        tf.start,
-        tf.min_position,
-        tf.min_value,
-        tf.info,
-        tf.name,
-        new_properties
-    )
+    lprop = lowercase(prop)
+    @assert lprop in VALID_PROPERTIES "Invalid property: $lprop."
+    new_properties = union(tf.properties, [lprop])
+    return TestFunction(tf.f, tf.grad, tf.start, tf.min_position, tf.min_value, tf.info, tf.name, new_properties)
 end
 
-# Hilfsfunktion zum Evaluieren einer Testfunktion
+# Hilfsfunktion zum Evaluieren
 function use_testfunction(tf::TestFunction, x::Vector{Float64})
     @assert !isempty(x) "Input vector x must not be empty"
     return (f=tf.f(x), grad=tf.grad(x))
 end
 
-# Hilfsfunktion zum Filtern von Testfunktionen
+# Hilfsfunktion zum Filtern
 function filter_testfunctions(predicate::Function)
     return [tf for tf in values(TEST_FUNCTIONS) if predicate(tf)]
 end
@@ -51,7 +56,7 @@ end
 # Dictionary für alle Testfunktionen
 const TEST_FUNCTIONS = Dict{String, TestFunction}()
 
-# Einzige Include-Anweisung für die zentrale Datei
+# Einzige Include-Anweisung
 include("include_testfunctions.jl")
 
 # Sammle alle TestFunction-Konstanten

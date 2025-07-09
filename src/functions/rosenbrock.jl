@@ -17,6 +17,7 @@ function rosenbrock_gradient(x::Vector{Float64})
     return grad
 end
 
+# ... (Funktion und Gradient unverändert)
 const ROSENBROCK_FUNCTION = TestFunction(
     rosenbrock,
     rosenbrock_gradient,
@@ -28,5 +29,5 @@ const ROSENBROCK_FUNCTION = TestFunction(
         :math => "f(x) = \\sum_{i=1}^{n-1} [100(x_{i+1} - x_i^2)^2 + (1 - x_i)^2]"
     ),
     "Rosenbrock",
-    Set(["multimodal", "differentiable", "scalable"])
+    Set(["multimodal", "non-convex", "non-separable", "differentiable", "scalable"])
 )

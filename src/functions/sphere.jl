@@ -10,6 +10,7 @@ function sphere_gradient(x::Vector{Float64})
     return 2.0 * x
 end
 
+
 const SPHERE_FUNCTION = TestFunction(
     sphere,
     sphere_gradient,
@@ -21,5 +22,7 @@ const SPHERE_FUNCTION = TestFunction(
         :math => "f(x) = \\sum_{i=1}^n x_i^2"
     ),
     "Sphere",
-    Set(["convex", "separable", "differentiable", "scalable"])
+    Set(["unimodal", "convex", "separable", "differentiable", "scalable"])
 )
+
+
