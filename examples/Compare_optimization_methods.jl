@@ -1,26 +1,11 @@
-using NonlinearOptimizationTestFunctionsInJulia
-using Optim
+# Path: examples/Compare_optimization_methods.jl
+# Purpose: Compares Gradient Descent and L-BFGS algorithms on the Rosenbrock function to demonstrate the flexibility of TestFunction objects.
+# Context: Part of NonlinearOptimizationTestFunctionsInJulia, showing how tf.f, tf.gradient!, and tf.start work seamlessly with different Optim.jl algorithms.
+# Notes: Simple output to focus on ease of use, as described in Readme.txt. Requires Optim.jl (included in Project.toml).
 
-# Demo: Compare two optimization methods (Gradient Descent and L-BFGS) on Rosenbrock
-println("Comparing Optimization Methods on Rosenbrock Function:")
-println("-"^50)
-
-# Setup function and gradient
+using NonlinearOptimizationTestFunctionsInJulia, Optim
 tf = NonlinearOptimizationTestFunctionsInJulia.ROSENBROCK_FUNCTION
-
-# Method 1: Gradient Descent
-gd_options = Optim.Options(show_trace=false, iterations=10000)
-gd_result = optimize(tf.f, tf.gradient!, tf.start, GradientDescent(), gd_options)
-println("Gradient Descent:")
-println("  Minimum: ", Optim.minimizer(gd_result))
-println("  Function Value: ", Optim.minimum(gd_result))
-println("  Iterations: ", Optim.iterations(gd_result))
-println("  Converged: ", Optim.converged(gd_result))
-println("-"^50)
-
-# Method 2: L-BFGS
-lbfgs_options = Optim.Options(show_trace=false, iterations=10000)
-lbfgs_result = optimize(tf.f, tf.gradient!, tf.start, LBFGS(), lbfgs_options)
-println("L-BFGS:")
-println("  Minimum: ", Optim.minimizer(lbfgs_result))
-println
+result_gd = optimize(tf.f, tf.gradient!, tf.start, GradientDescent())
+result_lbfgs = optimize(tf.f, tf.gradient!, tf.start, LBFGS())
+println("Gradient Descent on $(tf.name): $(Optim.minimizer(result_gd)), $(Optim.minimum(result_gd))")
+println("L-BFGS on $(tf.name): $(Optim.minimizer(result_lbfgs)), $(Optim.minimum(result_lbfgs))")

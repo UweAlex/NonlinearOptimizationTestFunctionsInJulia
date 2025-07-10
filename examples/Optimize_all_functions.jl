@@ -1,34 +1,10 @@
-# examples/Optimize_all_functions.jl
-using NonlinearOptimizationTestFunctionsInJulia
-using Optim
+# Path: examples/Optimize_all_functions.jl
+# Purpose: Demonstrates straightforward optimization of all test functions (Rosenbrock, Sphere) using Optim.jl's L-BFGS algorithm.
+# Context: Part of NonlinearOptimizationTestFunctionsInJulia, showcasing how TestFunction objects (tf.f, tf.gradient!, tf.start) integrate naturally with Optim.jl for simple and efficient optimization tasks.
+# Notes: Minimal output (minimizer and minimum value) to emphasize ease of use, as described in Readme.txt. Requires Optim.jl (included in Project.toml).
 
-# Optimizes all test functions using BFGS and returns results
-function optimize_all_testfunctions()
-    results = Dict{String, NamedTuple}()
-    for tf in values(NonlinearOptimizationTestFunctionsInJulia.TEST_FUNCTIONS)
-        try
-            result = optimize(
-                tf.f,
-                tf.gradient!,  # Nutzt das gradient!-Feld der TestFunction-Instanz
-                tf.start,
-                BFGS(),
-                Optim.Options(show_trace=false, iterations=10000)
-            )
-            results[tf.name] = (minimizer=Optim.minimizer(result), minimum=Optim.minimum(result))
-        catch e
-            @error "Error optimizing $(tf.name): $e"
-        end
-    end
-    return results
-end
-
-# Run the optimization and print results
-println("Optimizing All Test Functions with BFGS:")
-println("-"^50)
-results = optimize_all_testfunctions()
-for (name, result) in results
-    println("Function: ", name)
-    println("  Minimizer: ", result.minimizer)
-    println("  Minimum Value: ", result.minimum)
-    println("-"^50)
+using NonlinearOptimizationTestFunctionsInJulia, Optim
+for tf in values(NonlinearOptimizationTestFunctionsInJulia.TEST_FUNCTIONS)
+    result = optimize(tf.f, tf.gradient!, tf.start, LBFGS())
+    println("$(tf.name): $(Optim.minimizer(result)), $(Optim.minimum(result))")
 end
