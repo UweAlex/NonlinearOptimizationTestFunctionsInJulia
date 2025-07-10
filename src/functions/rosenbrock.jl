@@ -1,3 +1,4 @@
+# src/functions/rosenbrock.jl
 function rosenbrock(x::Vector{Float64})
     @assert length(x) >= 2 "Rosenbrock requires at least 2 dimensions"
     n = length(x)
@@ -17,7 +18,6 @@ function rosenbrock_gradient(x::Vector{Float64})
     return grad
 end
 
-# ... (Funktion und Gradient unverändert)
 const ROSENBROCK_FUNCTION = TestFunction(
     rosenbrock,
     rosenbrock_gradient,

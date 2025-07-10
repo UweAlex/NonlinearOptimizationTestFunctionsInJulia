@@ -1,0 +1,89 @@
+NonlinearOptimizationTestFunctionsInJulia - Zwischenbericht
+Stand: 10. Juli 2025, 10:19 AM CEST
+
+--- Projektstatus ---
+- Modulare Struktur: Testfunktionen (rosenbrock.jl, sphere.jl) in src/functions/, jede Datei <100 Zeilen für Wartbarkeit und Skalierbarkeit.
+- Testfunktionen-Einbindung: Explizite Einbindung über src/include_testfunctions.jl. Neue Funktionen durch include-Zeilen integrierbar.
+- Gradienten-Wrapper: gradient!-Feld in TestFunction für in-place Gradienten mit Optim.jl.
+- Tests: 60/60 Tests erfolgreich in test/runtests.jl:
+  - Rosenbrock (28 Tests): Funktionswerte (z. B. f([0.5, 0.5]) ≈ 6.5), Gradienten (z. B. grad([0.5, 0.5]) ≈ [-51.0, 50.0]), Edge-Cases (NaN, ±Inf, Überlauf), Eigenschaften (multimodal, non-convex, non-separable, differentiable, scalable), Startpunkt [0.0, 0.0], Minimum [1.0, 1.0], gradient!, mehrdimensionale Eingaben.
+  - Sphere (28 Tests): Funktionswerte (z. B. f([1.0, 1.0]) ≈ 2.0), Gradienten (z. B. grad([1.0, 1.0]) ≈ [2.0, 2.0]), Edge-Cases, Eigenschaften (unimodal, convex, separable, differentiable, scalable), Startpunkt [1.0, 1.0], Minimum [0.0, 0.0], gradient!, mehrdimensionale Eingaben.
+  - Filter (4 Tests): Testet filter_testfunctions für konvexe (1: Sphere) und multimodale (1: Rosenbrock) Funktionen.
+  - Properties Manipulation: Testet add_property und Validierung gegenüber VALID_PROPERTIES.
+- Demos: Drei Beispielskripte in examples/:
+  - Optimize_all_functions.jl: Optimiert alle Funktionen mit BFGS, gibt Minimizer, Minimalwert, Iterationsanzahl und Konvergenzstatus aus.
+  - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS auf der Rosenbrock-Funktion (Fehler korrigiert: f, g!, x0 durch tf.f, tf.gradient!, tf.start).
+  - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen und Eigenschaften.
+- Ladezeit: Ziel <0,5 Sekunden für 2 Funktionen, <5 Sekunden für 1000 Funktionen.
+- Kompatibilität: Reiner Julia-Code, kompatibel mit Julia 1.11.5 oder höher.
+- Readme-Format: Umstellung auf Readme.txt (reines TXT-Format), da Leerzeilen in Markdown-Versionen inkonsistent gerendert wurden (z. B. durch GitHub). Versuch, Leerzeilen durch ein Leerzeichen zu ersetzen, war nur einmal erfolgreich.
+- Orientierung an Opfunu: Zukünftige Erweiterung soll Opfunu’s systematische Klassifikation (unimodal, multimodal, konvex) und Funktionsvielfalt (z. B. CEC 2005–2022, >500 Funktionen) übernehmen, mit analytischen Gradienten in Julia für höhere Performance.
+- Vergleich mit anderen Paketen:
+  - Opfunu: >500 Benchmarkfunktionen in Python/NumPy, ohne analytische Gradienten. Unser Paket bietet Julia-native Gradienten und Optim.jl-Integration.
+  - CUTEst: Umfangreiche Sammlung (>1000 Probleme), aber komplexe Installation. Unser Paket ist Julia-nativ und zugänglicher.
+  - Optim.jl: Optimierungsalgorithmen (z. B. L-BFGS), keine Testfunktionen. Unser Paket ergänzt mit standardisierten Testfunktionen.
+  - NLopt: C-basierte Algorithmen mit Julia-Wrapper, keine Testfunktionen. Unser Paket liefert kompatible Testfunktionen.
+
+--- Hauptziele ---
+- Skalierbarkeit: Verwaltung von Testfunktionen durch include_testfunctions.jl.
+- Transparenz: Interne Details (z. B. Dateistruktur, Ladezeiten) für Nutzer unsichtbar.
+- Erweiterbarkeit: Neue Funktionen durch Hinzufügen in src/functions/ und include_testfunctions.jl.
+- Robustheit: Präzise Gradienten, Stabilität bei extremen Eingaben (z. B. [1e-308, 1e-308]).
+- Nutzerfreundlichkeit: Klare Demos für einfache Nutzung und Vergleich von Optimierungsalgorithmen.
+- Bekanntmachung: Veröffentlichung über GitHub, Julia Discourse und Julia General Registry.
+
+--- Todo-Liste ---
+- Demos finalisieren:
+  - Compare_optimization_methods.jl: Auf Rosenbrock ausgerichtet, Fehler korrigiert.
+  - Optimize_all_functions.jl: Iterationsanzahl und Konvergenzstatus hinzugefügt.
+- Unterlauf-Stabilitätstests: Tests für kleine Eingaben (z. B. [1e-308, 1e-308]).
+- Readme-Aktualisierung:
+  - Startpunkt der Sphere-Funktion auf [1.0, 1.0] korrigieren in Readme.txt.
+  - Demos (Optimize_all_functions.jl, Compare_optimization_methods.jl, List_all_available_test_functions_and_their_properties.jl) dokumentieren.
+  - Vergleich mit Opfunu, CUTEst, Optim.jl, NLopt hinzufügen.
+- Test-Suite korrigieren: Startpunkt-Test für SPHERE_FUNCTION in test/runtests.jl auf [1.0, 1.0] angepasst.
+- Bekanntmachung planen:
+  - GitHub Readme.txt mit klaren Beispielen optimieren.
+  - Post in Julia Discourse unter „Packages“ vorbereiten.
+  - Plan für Julia General Registry-Einreichung erstellen.
+
+--- Nächste Schritte ---
+- Demos finalisieren:
+  - Compare_optimization_methods.jl: Auf Rosenbrock ausgerichtet, Fehler korrigiert.
+  - Optimize_all_functions.jl: Erweitert um Iterationsanzahl und Konvergenzstatus:
+    results[tf.name] = (minimizer=Optim.minimizer(result), minimum=Optim.minimum(result), iterations=Optim.iterations(result), converged=Optim.converged(result))
+- Test-Suite korrigieren: Startpunkt-Test für SPHERE_FUNCTION auf [1.0, 1.0] angepasst.
+- Ladezeit testen:
+  @time include("src/NonlinearOptimizationTestFunctionsInJulia.jl")
+  @time sphere([1.0, 1.0])
+  Ziel: <0,5 Sekunden für 2 Funktionen.
+- Readme aktualisieren:
+  - Startpunkt der Sphere-Funktion auf [1.0, 1.0] korrigiert.
+  - Demos dokumentiert.
+  - Vergleich mit Opfunu, CUTEst, Optim.jl, NLopt hinzugefügt.
+- Bekanntmachung planen:
+  - GitHub Readme.txt mit Demos und Vergleich optimieren.
+  - Julia Discourse-Post:
+    New Package: NonlinearOptimizationTestFunctionsInJulia
+    I'm excited to share a new Julia package for nonlinear optimization test functions, featuring analytical gradients and a simple, modular structure. It currently includes Rosenbrock and Sphere functions, with plans to expand inspired by Opfunu's comprehensive benchmark suite.
+    Key features:
+    - Analytical gradients for high performance
+    - Modular design with easy function addition
+    - Compatible with Optim.jl
+    - Comprehensive test suite (60/60 tests passed)
+    - User-friendly demos in examples/
+    Check out the examples in Readme.txt and try it out:
+    https://github.com/UweAlex/NonlinearOptimizationTestFunctionsInJulia
+    Feedback and contributions welcome!
+  - Julia General Registry: Nach Stabilisierung der Tests und Demos Registrierung mit Project.toml und Versionsnummer vorbereiten.
+
+--- Begründung ---
+- Test-Suite: Vollständig integriert, 60 Tests beschrieben, Startpunkt für SPHERE_FUNCTION korrigiert ([1.0, 1.0]).
+- Demos: Compare_optimization_methods.jl auf Rosenbrock ausgerichtet, Optimize_all_functions.jl erweitert, List_all_available_test_functions_and_their_properties.jl dokumentiert.
+- Readme.txt: Startpunkt der Sphere-Funktion korrigiert, Demos und Vergleich mit Opfunu integriert, Leerzeilen-Problem erwähnt.
+- Leerzeilen-Problem: Dokumentiert, dass Readme.txt aufgrund inkonsistenter Markdown-Rendering verwendet wird.
+- Opfunu: Zukünftiges Ziel und Vergleich klar formuliert (>500 Funktionen, Python/NumPy, ohne Gradienten; unser Paket mit Julia-Gradienten).
+- Vergleich: CUTEst (komplex), Optim.jl/NLopt (keine Testfunktionen), unser Paket als Julia-native Ergänzung.
+- Bekanntmachung: Konkrete Schritte mit GitHub, Discourse und Registry.
+- KISS: Keine Gradiententests, keine neuen Funktionen, Fokus auf Struktur, Tests und Nutzerfreundlichkeit.
+- Bereinigung: PrecompileTools.jl, überambitionierte Ladezeiten (0,1 Sekunden), Stilistiken (z. B. „männliches Angeben“) entfernt.
