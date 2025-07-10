@@ -1,61 +1,83 @@
 NonlinearOptimizationTestFunctionsInJulia - Zwischenbericht
-Stand: 10. Juli 2025, 13:56 PM CEST
+Stand: 10. Juli 2025, 14:39 PM CEST
 
 --- Projektstatus ---
 - Modulare Struktur: Testfunktionen (rosenbrock.jl, sphere.jl) in src/functions/, <100 Zeilen pro Datei.
 - Testfunktionen-Einbindung: Via src/include_testfunctions.jl.
-- Gradienten-Wrapper: grad-Feld (non-in-place) und gradient!-Feld (in-place) in TestFunction, kompatibel mit Optim.jl, NLopt, Hessian-Methoden.
+- Neue TestFunction-Struktur: Refaktoriert, um "Kraut und Rüben" zu vermeiden:
+  - Felder: f (Funktion), grad (nicht-in-place Gradient), gradient! (in-place Gradient), meta (Dict mit allen Metadaten).
+  - meta enthält: :name, :properties, :start, :min_position, :min_value, :lb, :ub, :description, :cec_id (für zukünftige CEC-Funktionen).
+  - Vorteil: KISS-konform, flexibel für CEC-Integration (z. B. Suchbereiche, hybride Funktionen).
+- Suchbereiche: Für Rosenbrock ([(-5.0, -5.0), (5.0, 5.0)]), Sphere ([(-5.12, -5.12), (5.12, 5.12)]) in meta[:lb], meta[:ub] geplant. Für CEC-Funktionen (z. B. Ackley F12017) wird [-100, 100]^n verwendet.
+- Gradienten-Wrapper: grad (nicht-in-place) und gradient! (in-place) für Optim.jl, NLopt, Hessian-Methoden.
 - Tests: 60/60 Tests in test/runtests.jl:
-  - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ≈ 6.5), Gradienten (non-in-place, in-place), Edge-Cases (NaN, ±Inf), Eigenschaften (multimodal, non-convex), Startpunkt [0.0, 0.0], Minimum [1.0, 1.0].
-  - Sphere (28): Funktionswerte (f([1.0, 1.0]) ≈ 2.0), Gradienten (non-in-place, in-place), Eigenschaften (unimodal, convex), Startpunkt [1.0, 1.0], Minimum [0.0, 0.0].
+  - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ≈ 6.5), Gradienten, Edge-Cases (NaN, ±Inf), Eigenschaften (multimodal, non-convex), Startpunkt [0.0, 0.0], Minimum [1.0, 1.0].
+  - Sphere (28): Funktionswerte (f([1.0, 1.0]) ≈ 2.0), Gradienten, Eigenschaften (unimodal, convex), Startpunkt [1.0, 1.0], Minimum [0.0, 0.0].
   - Filter (4): Testet filter_testfunctions für konvexe/multimodale Funktionen.
   - Properties Manipulation: Testet add_property.
 - Demos: Fünf Beispielskripte in examples/:
-  - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, minimalistische Ausgabe, nutzt in-place tf.gradient! für Optim.jl-Integration.
-  - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS auf Rosenbrock, nutzt in-place tf.gradient!.
+  - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, nutzt tf.gradient! (in-place).
+  - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS auf Rosenbrock, tf.gradient!.
   - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen, Startpunkte, Minima, Eigenschaften.
-  - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt’s LD_LBFGS, nutzt in-place tf.gradient!.
-  - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte auf Rosenbrock mit analytischen Gradienten (non-in-place tf.grad) und Zygote-Hessian, ultra-minimal (~11 Zeilen), ohne Regularisierung (nur Demo, nicht produktionstauglich).
+  - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt’s LD_LBFGS, tf.gradient!.
+  - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte auf Rosenbrock, tf.grad (nicht-in-place), ultra-minimal (~11 Zeilen), ohne Regularisierung (nur Demo).
 - Ladezeit: Ziel <0,5 Sekunden für 2 Funktionen.
 - Kompatibilität: Julia 1.11.5+, reiner Julia-Code.
-- Readme-Format: Readme.txt, da Markdown-Leerzeilen inkonsistent gerendert wurden (GitHub). Versuch mit Leerzeichen nur einmal erfolgreich.
+- Readme-Format: Readme.txt (Markdown-Leerzeilen-Problem intern gelöst).
 - Vergleich mit anderen Paketen:
-  - Opfunu: >500 Benchmarkfunktionen in Python/NumPy, ohne Gradienten. Unser Paket bietet Julia-native Gradienten (interner Vergleich, nicht öffentlich).
+  - Opfunu: >500 Benchmarkfunktionen (Python, z. B. Ackley F12017), ohne Gradienten. Interner Vergleich, nicht öffentlich.
   - CUTEst: Komplexe Installation. Unser Paket ist Julia-nativ.
   - Optim.jl: Keine Testfunktionen. Unser Paket ergänzt.
   - NLopt: C-basiert, keine Testfunktionen. Unser Paket kompatibel.
-  - Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Zugänglich für Hessian-basierte Optimierung (Newton), in Readme.txt dokumentiert.
+  - Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Kompatibel für Hessian-basierte Optimierung.
 
 --- Hauptziele ---
 - Skalierbarkeit: Via include_testfunctions.jl.
 - Transparenz: Interne Details unsichtbar.
-- Erweiterbarkeit: Neue Funktionen via src/functions/ (aktuell nicht geplant).
-- Robustheit: Präzise Gradienten (non-in-place und in-place), Stabilität bei [1e-308, 1e-308].
-- Nutzerfreundlichkeit: Einfache, natürliche Demos.
+- Erweiterbarkeit: Neue Funktionen via src/functions/, für CEC-Funktionen geplant.
+- Robustheit: Präzise Gradienten, Stabilität bei [1e-308, 1e-308].
+- Nutzerfreundlichkeit: Einfache Demos (~10–15 Zeilen).
 - Bekanntmachung: GitHub, Julia Discourse (zurückgestellt), Julia General Registry.
 
---- Todo-Liste ---
-- Demos: Compute_hessian_with_zygote.jl (~11 Zeilen) implementiert, ohne Regularisierung, nutzt tf.grad (non-in-place). Andere Demos nutzen tf.gradient! (in-place) für Optim.jl/NLopt.
-- Unterlauf-Tests: Für [1e-308, 1e-308] in test/runtests.jl.
-- Readme.txt: Aktualisiert mit Newton-Demo und Kompatibilität (Manopt.jl, JuMP/Ipopt, NLSolvers.jl).
-- Project.toml: NLopt als optionale Abhängigkeit.
-- Discourse-Post: Zurückgestellt, ohne Opfunu.
+--- Pläne für CEC-Funktionen ---
+- Ziel: Implementierung aller CEC 2017/2022 Funktionen (z. B. Ackley F12017, Rastrigin F22017).
+- Suchbereiche: Alle CEC-Funktionen haben Suchbereich (z. B. [-100, 100]^n für CEC 2017/2022), in meta[:lb], meta[:ub] speichern.
+- Metadaten: meta[:cec_id] (z. B. "F12017") statt properties-Missbrauch (z. B. Set(["F12017"])).
+- Ackley: Vorkommen in CEC 2005 (F1), 2017 (F1), hybride Funktionen (z. B. CEC 2022 F6). Start mit reiner Ackley (F12017).
+- Implementierung: src/functions/ackley.jl (~40 Zeilen, f, grad, gradient!, meta), später für alle 30 CEC 2017 Funktionen (~1200 Zeilen).
+- Tests: ~20 Tests pro CEC-Funktion (Funktionswerte, Gradienten, Suchbereiche, meta[:cec_id]).
+- Demos: Wiederverwende Newton/L-BFGS-Demos (~10–15 Zeilen).
 
---- Nächste Schritte ---
-- Demos: Implementiere Compute_hessian_with_zygote.jl und andere Demos wie oben.
-- Test-Suite: Unterlauf-Tests hinzufügen.
+--- Todo-Liste ---
+- Refaktoriere TestFunction: Packe start, min_position, min_value, name, properties, lb, ub in meta Dict (src/NonlinearOptimizationTestFunctionsInJulia.jl).
+- Füge Suchbereiche für Rosenbrock ([(-5, 5)^n]), Sphere ([(-5.12, 5.12)^n]) in meta[:lb], meta[:ub] hinzu (src/functions/rosenbrock.jl, sphere.jl).
+- Passe Demos an neue Struktur an (tf.start → tf.meta[:start], etc.).
+- Unterlauf-Tests: Für [1e-308, 1e-308] in test/runtests.jl.
 - Ladezeit testen:
   @time include("src/NonlinearOptimizationTestFunctionsInJulia.jl")
   @time sphere([1.0, 1.0])
   Ziel: <0,5 Sekunden.
-- Readme.txt: Wie oben.
-- Project.toml: NLopt in [extras], wie zuvor vorgeschlagen.
-- Bekanntmachung: Discourse-Post nach Polierung, ohne Opfunu.
+- Readme.txt: Aktualisiert mit Newton-Demo, Suchbereichen, CEC-Plänen.
+- Project.toml: NLopt als optionale Abhängigkeit.
+- Discourse-Post: Zurückgestellt, ohne Opfunu, mit Hinweis auf CEC-Pläne.
+
+--- Nächste Schritte ---
+- Implementiere neue TestFunction-Struktur (meta Dict).
+- Aktualisiere rosenbrock.jl, sphere.jl mit meta[:lb], meta[:ub].
+- Passe Demos an (examples/*.jl, ~10–15 Zeilen).
+- Test-Suite: Unterlauf-Tests hinzufügen.
+- Ladezeit testen (<0,5 Sekunden).
+- Readme.txt: Ergänze CEC-Pläne, neue Struktur.
+- Commit:
+  git add src/ Project.toml Readme.txt docs/interim_reports/Zwischenbericht.txt examples/
+  git commit -m "Refactor TestFunction to pack metadata into meta Dict, add search domains for Rosenbrock/Sphere, update Zwischenbericht with CEC plans"
+  git push origin main
+- CEC: Starte mit Ackley (F12017) als Pilot (~40 Zeilen), später alle 30 CEC 2017 Funktionen.
 
 --- Begründung ---
-- Test-Suite: 60 Tests, Sphere-Startpunkt [1.0, 1.0] korrigiert.
-- Demos: Newton-Demo (~11 Zeilen), ultra-minimal, ohne Regularisierung, nutzt tf.grad (non-in-place) für Flüssigkeit. Optim.jl/NLopt-Demos nutzen tf.gradient! (in-place).
-- Readme.txt: Newton-Demo und Bibliotheken (Manopt.jl, JuMP/Ipopt, NLSolvers.jl) hinzugefügt, beide Gradienten dokumentiert.
+- Neue Struktur: Vereinfacht TestFunction (3 Felder statt 9), KISS-konform, CEC-ready.
+- Suchbereiche: Notwendig für CEC-Kompatibilität, für Rosenbrock/Sphere konsistent definiert.
+- Demos: Ultra-minimal (~11 Zeilen), gradientenbasiert (tf.grad, tf.gradient!), Julia-nativ.
+- CEC-Pläne: Ackley (F12017) als Start, meta[:cec_id] sauberer als properties-Missbrauch.
 - Opfunu: Interner Vergleich, nicht öffentlich.
-- KISS: Keine neuen Funktionen, Fokus auf Einfachheit.
-- Bereinigung: PrecompileTools.jl, überambitionierte Ladezeiten entfernt.
+- KISS: Keine neuen Funktionen jetzt, Fokus auf Struktur und Tests.
