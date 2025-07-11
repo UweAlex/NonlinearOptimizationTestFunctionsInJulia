@@ -1,30 +1,31 @@
 NonlinearOptimizationTestFunctionsInJulia - Zwischenbericht
-Stand: 11. Juli 2025, 10:50 AM CEST
+Stand: 11. Juli 2025, 14:21 PM CEST
 
 Projektstatus:
 - Modulare Struktur: Testfunktionen (rosenbrock.jl, sphere.jl) in src/functions/, jeweils unter 100 Zeilen.
-- Integration der Testfunktionen: Über src/include_testfunctions.jl und FUNCTION_REGISTRY in src/registry.jl.
+- Integration der Testfunktionen: Über src/include_testfunctions.jl und TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl.
 - TestFunction-Struktur: Überarbeitet für Klarheit:
   - Felder: f (Funktion), grad (nicht-in-place Gradient), gradient! (in-place Gradient), meta (Dict mit Name, Startpunkt, Minimumsposition, Minimalwert, Eigenschaften, untere Grenze, obere Grenze, Beschreibung).
   - Vorteil: KISS-konform, robuste Metadatenvalidierung.
-- Suchbereiche: Implementiert in meta[:lb], meta[:ub]:
-  - Rosenbrock: [-5, 5]^n (fill(-5.0, n), fill(5.0, n)).
-  - Sphere: [-5.12, 5.12]^n (fill(-5.12, n), fill(5.12, n)).
+- Suchbereiche: Implementiert in meta[:lb](n), meta[:ub](n):
+  - Rosenbrock: [-5, 5]^n (meta[:lb](n) = fill(-5.0, n), meta[:ub](n) = fill(5.0, n)).
+  - Sphere: [-5.12, 5.12]^n (meta[:lb](n) = fill(-5.12, n), meta[:ub](n) = fill(5.12, n)).
 - Gradienten-Wrapper: grad (nicht-in-place) und gradient! (in-place) für Optim.jl, NLopt und Hessian-Methoden (Zygote.hessian mit Unterstützung für ForwardDiff.Dual).
-- Tests: 60/60 Tests in test/runtests.jl:
-  - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ~ 6.5), Gradienten, numerische Gradientengenauigkeit, Randfälle (NaN, Inf, 1e-308), Eigenschaften (multimodal, nicht-konvex), Startpunkt [0.0, 0.0], Minimum [1.0, 1.0].
-  - Sphere (28): Funktionswerte (f([1.0, 1.0]) ~ 2.0), Gradienten, numerische Gradientengenauigkeit, Eigenschaften (unimodal, konvex), Startpunkt [0.0, 0.0], Minimum [0.0, 0.0].
+- Tests: 64/64 Tests in test/runtests.jl:
+  - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ~ 6.5), Gradienten, numerische Gradientengenauigkeit, Randfälle (NaN, Inf, 1e-308), Eigenschaften (multimodal, nicht-konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [1.0, 1.0].
+  - Sphere (28): Funktionswerte (f([1.0, 1.0]) ~ 2.0), Gradienten, numerische Gradientengenauigkeit, Eigenschaften (unimodal, konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [0.0, 0.0].
   - Filter (4): Testet filter_testfunctions für konvexe/multimodale Funktionen.
-  - Eigenschaften: Testet add_property.
+  - Eigenschaften (4): Testet add_property.
+  - Skalierbare Metadaten (4): Testet meta[:lb](n), meta[:ub](n), meta[:start](n), meta[:min_position](n) für n=3.
 - Demos: Fünf Skripte in examples/ (10-15 Zeilen):
-  - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, verwendet tf.gradient!, ftol_rel=1e-6.
-  - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS bei Rosenbrock, ftol_rel=1e-6.
+  - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, verwendet tf.gradient!, ftol_rel=1e-6, meta[:start](n).
+  - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS bei Rosenbrock, ftol_rel=1e-6, meta[:start](n).
   - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen, Startpunkte, Minima, Eigenschaften.
-  - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt's LD_LBFGS, ftol_rel=1e-6.
+  - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt's LD_LBFGS, ftol_rel=1e-6, meta[:lb](n), meta[:ub](n).
   - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte bei Rosenbrock, korrigiert für ForwardDiff.Dual-Unterstützung.
-- Ladezeit: Ziel < 0.5 Sekunden für zwei Funktionen, optimiert mit FUNCTION_REGISTRY in src/registry.jl.
+- Ladezeit: Ziel < 0.5 Sekunden für zwei Funktionen, optimiert mit TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl.
 - Kompatibilität: Julia 1.11.5+ ist installiert und bestätigt, reiner Julia-Code.
-- Dokumentation: Readme.txt (reiner Text, kein Markdown), Dateikommentare mit Pfad, Zweck, Kontext, Zeitstempel, Docstrings für Kernfunktionen (use_testfunction, filter_testfunctions, rosenbrock, sphere).
+- Dokumentation: Readme.txt (reiner Text, kein Markdown), Dateikommentare mit Pfad, Zweck, Kontext, Zeitstempel.
 - Fehlerbehandlung: @assert durch throw(ArgumentError(...)) ersetzt für Robustheit.
 - Vergleich mit anderen Paketen:
   - Opfunu: 500+ Python-Benchmark-Funktionen, keine Gradienten (interner Vergleich, nicht öffentlich).
@@ -32,7 +33,7 @@ Projektstatus:
   - Optim.jl, NLopt, Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Kompatibel, unser Paket fügt Testfunktionen hinzu.
 
 Hauptziele:
-- Skalierbarkeit: Über include_testfunctions.jl und FUNCTION_REGISTRY.
+- Skalierbarkeit: Über include_testfunctions.jl und TEST_FUNCTIONS, meta[:lb](n), meta[:ub](n) für beliebige Dimensionen.
 - Transparenz: Interne Details durch TestFunction und meta Dict verborgen.
 - Robustheit: Präzise Gradienten, Stabilität bei [1e-308, 1e-308], robuste Fehlerbehandlung.
 - Benutzerfreundlichkeit: Minimale Demos (10-15 Zeilen), klare Dokumentation.
@@ -50,16 +51,17 @@ Nächste Schritte:
 - Ladezeit testen und optimieren, falls nötig.
 - Commit:
   git add src/ Project.toml Readme.txt docs/interim_reports/Zwischenbericht.txt
-  git commit -m "FUNCTION_REGISTRY implementiert, Zeitstempel auf 11. Juli 2025, 10:50 AM CEST aktualisiert, Vorbereitung für Documenter.jl"
+  git commit -m "Skalierbare Metadaten implementiert (lb, ub, start, min_position), FUNCTION_REGISTRY durch TEST_FUNCTIONS ersetzt, Readme.txt erweitert, Zeitstempel auf 11. Juli 2025, 14:21 PM CEST aktualisiert"
   git push origin main
 
 Verbesserungsvorschläge:
 - Dokumentation: Documenter.jl für HTML-Dokumentation verwenden.
-- Registry: FUNCTION_REGISTRY in src/registry.jl für schnellere Ladezeiten implementiert.
+- Registry: TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl für schnellere Ladezeiten implementiert.
+- Tests: Erweiterung um weitere Testfunktionen und komplexere Szenarien.
 
 Begründung:
 - Neue Struktur: Vereinfacht TestFunction (4 Felder), KISS-konform.
-- Suchbereiche: Für Rosenbrock und Sphere hinzugefügt, konsistent mit Standards.
+- Suchbereiche: Für Rosenbrock und Sphere als Funktionen meta[:lb](n), meta[:ub](n) implementiert, konsistent mit Standards.
 - Fehlerbehandlung: throw(ArgumentError(...)) sorgt für Robustheit.
 - ForwardDiff-Unterstützung: Behebt Compute_hessian_with_zygote.jl.
 - Demos: Minimal (10-15 Zeilen), gradientenbasiert, Julia-nativ, mit Toleranzen.
