@@ -2,9 +2,9 @@
 # Purpose: Optimizes all test functions using Optim.jl's L-BFGS algorithm.
 # Context: Part of NonlinearOptimizationTestFunctionsInJulia, showcasing TestFunction integration.
 # Notes: Minimal output, requires Optim.jl (included in Project.toml).
-# Last modified: 11. Juli 2025, 10:23 AM CEST
+# Last modified: 11. Juli 2025, 13:20 PM CEST
 using NonlinearOptimizationTestFunctionsInJulia, Optim
 for tf in values(NonlinearOptimizationTestFunctionsInJulia.TEST_FUNCTIONS)
-    result = optimize(tf.f, tf.gradient!, tf.meta[:start], LBFGS(), Optim.Options(f_tol=1e-6))
+    result = optimize(tf.f, tf.gradient!, tf.meta[:start], LBFGS(), Optim.Options(f_reltol=1e-6))
     println("$(tf.meta[:name]): $(Optim.minimizer(result)), $(Optim.minimum(result))")
 end
