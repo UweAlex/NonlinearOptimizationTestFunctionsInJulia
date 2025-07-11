@@ -1,7 +1,7 @@
 # src/NonlinearOptimizationTestFunctionsInJulia.jl
 # Purpose: Defines the core module for nonlinear optimization test functions.
 # Context: Provides TestFunction structure, metadata validation, and function registry.
-# Last modified: 11. Juli 2025, 10:14 AM CEST
+# Last modified: 11. Juli 2025, 10:23 AM CEST
 
 module NonlinearOptimizationTestFunctionsInJulia
 
@@ -33,14 +33,22 @@ struct TestFunction
     end
 end
 
-# Prüft, ob eine Eigenschaft vorhanden ist
+"""
+    has_property(tf::TestFunction, prop::String) -> Bool
+Checks if the test function `tf` has the specified property `prop`.
+Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
+"""
 function has_property(tf::TestFunction, prop::String)
     lprop = lowercase(prop)
     lprop in VALID_PROPERTIES || throw(ArgumentError("Invalid property: $lprop"))
     return lprop in tf.meta[:properties]
 end
 
-# Fügt eine Eigenschaft hinzu
+"""
+    add_property(tf::TestFunction, prop::String) -> TestFunction
+Adds the property `prop` to the test function `tf` and returns a new TestFunction.
+Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
+"""
 function add_property(tf::TestFunction, prop::String)
     lprop = lowercase(prop)
     lprop in VALID_PROPERTIES || throw(ArgumentError("Invalid property: $lprop"))
@@ -49,17 +57,29 @@ function add_property(tf::TestFunction, prop::String)
     return TestFunction(tf.f, tf.grad, new_meta)
 end
 
-# Hilfsfunktion zum Evaluieren
+"""
+    use_testfunction(tf::TestFunction, x::Vector{T}) where {T<:Union{Real, ForwardDiff.Dual}} -> NamedTuple
+Evaluates the test function `tf` and its gradient at point `x`.
+Throws an `ArgumentError` if `x` is empty.
+Returns a named tuple with fields `f` (function value) and `grad` (gradient).
+"""
 function use_testfunction(tf::TestFunction, x::Vector{T}) where {T<:Union{Real, ForwardDiff.Dual}}
     isempty(x) && throw(ArgumentError("Input vector x must not be empty"))
     return (f=tf.f(x), grad=tf.grad(x))
 end
 
-# Hilfsfunktion zum Filtern
+"""
+    filter_testfunctions(predicate::Function) -> Vector{TestFunction}
+Filters test functions from `TEST_FUNCTIONS` based on the given predicate.
+"""
 function filter_testfunctions(predicate::Function)
     return [tf for tf in values(TEST_FUNCTIONS) if predicate(tf)]
 end
 
+"""
+    filter_testfunctions(test_functions::Dict{String, TestFunction}, predicate::Function) -> Vector{TestFunction}
+Filters test functions from a given dictionary based on the predicate.
+"""
 function filter_testfunctions(test_functions::Dict{String, TestFunction}, predicate::Function)
     return [tf for tf in values(test_functions) if predicate(tf)]
 end
