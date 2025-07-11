@@ -1,10 +1,10 @@
 # Path: examples/Optimize_all_functions.jl
-# Purpose: Demonstrates straightforward optimization of all test functions (Rosenbrock, Sphere) using Optim.jl's L-BFGS algorithm.
-# Context: Part of NonlinearOptimizationTestFunctionsInJulia, showcasing how TestFunction objects (tf.f, tf.gradient!, tf.start) integrate naturally with Optim.jl for simple and efficient optimization tasks.
-# Notes: Minimal output (minimizer and minimum value) to emphasize ease of use, as described in Readme.txt. Requires Optim.jl (included in Project.toml).
-
+# Purpose: Optimizes all test functions using Optim.jl's L-BFGS algorithm.
+# Context: Part of NonlinearOptimizationTestFunctionsInJulia, showcasing TestFunction integration.
+# Notes: Minimal output, requires Optim.jl (included in Project.toml).
+# Last modified: 11. Juli 2025, 09:13 AM CEST
 using NonlinearOptimizationTestFunctionsInJulia, Optim
 for tf in values(NonlinearOptimizationTestFunctionsInJulia.TEST_FUNCTIONS)
-    result = optimize(tf.f, tf.gradient!, tf.start, LBFGS())
-    println("$(tf.name): $(Optim.minimizer(result)), $(Optim.minimum(result))")
+    result = optimize(tf.f, tf.gradient!, tf.meta[:start], LBFGS())
+    println("$(tf.meta[:name]): $(Optim.minimizer(result)), $(Optim.minimum(result))")
 end

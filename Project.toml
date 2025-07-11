@@ -1,3 +1,4 @@
+# Project.toml
 name = "NonlinearOptimizationTestFunctionsInJulia"
 uuid = "3180b13f-e8d1-40aa-806b-3e6ce7522c6b"
 authors = ["aox"]
@@ -24,5 +25,3 @@ NLopt = "76087f3c-5691-56af-9a33-bf431cd00edd"
 
 [targets]
 test = ["Test", "Zygote"]
-
-

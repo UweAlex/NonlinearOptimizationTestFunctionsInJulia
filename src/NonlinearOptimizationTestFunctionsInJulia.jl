@@ -1,4 +1,4 @@
-# src\NonlinearOptimizationTestFunctionsInJulia.jl
+# src/NonlinearOptimizationTestFunctionsInJulia.jl
 module NonlinearOptimizationTestFunctionsInJulia
 
 using LinearAlgebra
@@ -15,32 +15,29 @@ const VALID_PROPERTIES = Set([
 struct TestFunction
     f::Function
     grad::Function
-    gradient!::Function  # Neues Feld für in-place Gradientenberechnung
-    start::Vector{Float64}
-    min_position::Vector{Float64}
-    min_value::Float64
-    info::Dict
-    name::String
-    properties::Set{String}
-    function TestFunction(f, grad, start, min_position, min_value, info, name, properties)
-        @assert all(p in VALID_PROPERTIES for p in properties) "Invalid properties: $(setdiff(properties, VALID_PROPERTIES))."
-        # Erstelle die gradient!-Funktion, die tf.grad(x) in G kopiert
+    gradient!::Function
+    meta::Dict{Symbol, Any}
+    function TestFunction(f, grad, meta)
+        required_keys = [:name, :start, :min_position, :min_value, :properties]
+        all(haskey(meta, k) for k in required_keys) || error("Missing required meta keys: $(setdiff(required_keys, keys(meta)))")
+        @assert all(p in VALID_PROPERTIES for p in meta[:properties]) "Invalid properties: $(setdiff(meta[:properties], VALID_PROPERTIES))."
         gradient! = (G, x) -> copyto!(G, grad(x))
-        new(f, grad, gradient!, start, min_position, min_value, info, name, properties)
+        new(f, grad, gradient!, meta)
     end
 end
 
 # Prüft, ob eine Eigenschaft vorhanden ist
 function has_property(tf::TestFunction, prop::String)
-    return lowercase(prop) in tf.properties
+    return lowercase(prop) in tf.meta[:properties]
 end
 
 # Fügt eine Eigenschaft hinzu
 function add_property(tf::TestFunction, prop::String)
     lprop = lowercase(prop)
     @assert lprop in VALID_PROPERTIES "Invalid property: $lprop."
-    new_properties = union(tf.properties, [lprop])
-    return TestFunction(tf.f, tf.grad, tf.start, tf.min_position, tf.min_value, tf.info, tf.name, new_properties)
+    new_meta = copy(tf.meta)
+    new_meta[:properties] = union(tf.meta[:properties], [lprop])
+    return TestFunction(tf.f, tf.grad, new_meta)
 end
 
 # Hilfsfunktion zum Evaluieren
@@ -69,16 +66,16 @@ for name in names(@__MODULE__, all=true)
     if endswith(string(name), "_FUNCTION")
         tf = getfield(@__MODULE__, name)
         if tf isa TestFunction
-            TEST_FUNCTIONS[tf.name] = tf
+            TEST_FUNCTIONS[tf.meta[:name]] = tf
         end
     end
 end
 
 # Exportiere Funktionen, Gradienten und Konstanten
 for tf in values(TEST_FUNCTIONS)
-    export_name = Symbol(lowercase(tf.name))
-    export_gradient = Symbol(lowercase(tf.name) * "_gradient")
-    export_constant = Symbol(uppercase(tf.name) * "_FUNCTION")
+    export_name = Symbol(lowercase(tf.meta[:name]))
+    export_gradient = Symbol(lowercase(tf.meta[:name]) * "_gradient")
+    export_constant = Symbol(uppercase(tf.meta[:name]) * "_FUNCTION")
     @eval export $export_name
     @eval export $export_gradient
     @eval export $export_constant

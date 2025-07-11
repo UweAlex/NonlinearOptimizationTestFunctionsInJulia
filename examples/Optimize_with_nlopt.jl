@@ -1,11 +1,11 @@
 # Path: examples/Optimize_with_nlopt.jl
-# Purpose: Demonstrates optimization of the Rosenbrock function using NLopt's LD_LBFGS algorithm to show compatibility with external optimization libraries.
-# Context: Part of NonlinearOptimizationTestFunctionsInJulia, highlighting how TestFunction objects (tf.f, tf.gradient!, tf.start) integrate naturally with NLopt.
-# Notes: Minimal output to emphasize simplicity, as described in Readme.txt. Requires NLopt.jl (optional dependency in Project.toml, install via Pkg.add("NLopt")).
-
+# Purpose: Demonstrates optimization of the Rosenbrock function using NLopt's LD_LBFGS algorithm.
+# Context: Part of NonlinearOptimizationTestFunctionsInJulia, highlighting TestFunction integration with NLopt.
+# Notes: Minimal output for simplicity. Requires NLopt.jl (optional dependency in Project.toml).
+# Last modified: 11. Juli 2025, 09:13 AM CEST
 using NonlinearOptimizationTestFunctionsInJulia, NLopt
 tf = NonlinearOptimizationTestFunctionsInJulia.ROSENBROCK_FUNCTION
-opt = Opt(:LD_LBFGS, length(tf.start))
+opt = Opt(:LD_LBFGS, length(tf.meta[:start]))
 NLopt.min_objective!(opt, (x, grad) -> begin
     f = tf.f(x)
     if length(grad) > 0
@@ -13,5 +13,5 @@ NLopt.min_objective!(opt, (x, grad) -> begin
     end
     f
 end)
-minf, minx, ret = optimize(opt, tf.start)
-println("$(tf.name): $minx, $minf")
+minf, minx, ret = optimize(opt, tf.meta[:start])
+println("$(tf.meta[:name]): $minx, $minf")
