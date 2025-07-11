@@ -23,7 +23,7 @@ Projektstatus:
   - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt's LD_LBFGS, ftol_rel=1e-6.
   - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte bei Rosenbrock, korrigiert für ForwardDiff.Dual-Unterstützung.
 - Ladezeit: Ziel < 0.5 Sekunden für zwei Funktionen, optimiert mit FUNCTION_REGISTRY in src/registry.jl.
-- Kompatibilität: Julia 1.11.5+, reiner Julia-Code.
+- Kompatibilität: Julia 1.11.5+ ist installiert und bestätigt, reiner Julia-Code.
 - Dokumentation: Readme.txt (reiner Text, kein Markdown), Dateikommentare mit Pfad, Zweck, Kontext, Zeitstempel, Docstrings für Kernfunktionen (use_testfunction, filter_testfunctions, rosenbrock, sphere).
 - Fehlerbehandlung: @assert durch throw(ArgumentError(...)) ersetzt für Robustheit.
 - Vergleich mit anderen Paketen:
