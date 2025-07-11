@@ -1,83 +1,79 @@
 NonlinearOptimizationTestFunctionsInJulia - Zwischenbericht
-Stand: 10. Juli 2025, 14:39 PM CEST
+Stand: 11. Juli 2025, 10:14 AM CEST
 
---- Projektstatus ---
-- Modulare Struktur: Testfunktionen (rosenbrock.jl, sphere.jl) in src/functions/, <100 Zeilen pro Datei.
-- Testfunktionen-Einbindung: Via src/include_testfunctions.jl.
-- Neue TestFunction-Struktur: Refaktoriert, um "Kraut und Rüben" zu vermeiden:
-  - Felder: f (Funktion), grad (nicht-in-place Gradient), gradient! (in-place Gradient), meta (Dict mit allen Metadaten).
-  - meta enthält: :name, :properties, :start, :min_position, :min_value, :lb, :ub, :description, :cec_id (für zukünftige CEC-Funktionen).
-  - Vorteil: KISS-konform, flexibel für CEC-Integration (z. B. Suchbereiche, hybride Funktionen).
-- Suchbereiche: Für Rosenbrock ([(-5.0, -5.0), (5.0, 5.0)]), Sphere ([(-5.12, -5.12), (5.12, 5.12)]) in meta[:lb], meta[:ub] geplant. Für CEC-Funktionen (z. B. Ackley F12017) wird [-100, 100]^n verwendet.
-- Gradienten-Wrapper: grad (nicht-in-place) und gradient! (in-place) für Optim.jl, NLopt, Hessian-Methoden.
-- Tests: 60/60 Tests in test/runtests.jl:
-  - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ≈ 6.5), Gradienten, Edge-Cases (NaN, ±Inf), Eigenschaften (multimodal, non-convex), Startpunkt [0.0, 0.0], Minimum [1.0, 1.0].
-  - Sphere (28): Funktionswerte (f([1.0, 1.0]) ≈ 2.0), Gradienten, Eigenschaften (unimodal, convex), Startpunkt [1.0, 1.0], Minimum [0.0, 0.0].
-  - Filter (4): Testet filter_testfunctions für konvexe/multimodale Funktionen.
-  - Properties Manipulation: Testet add_property.
-- Demos: Fünf Beispielskripte in examples/:
-  - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, nutzt tf.gradient! (in-place).
-  - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS auf Rosenbrock, tf.gradient!.
-  - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen, Startpunkte, Minima, Eigenschaften.
-  - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt’s LD_LBFGS, tf.gradient!.
-  - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte auf Rosenbrock, tf.grad (nicht-in-place), ultra-minimal (~11 Zeilen), ohne Regularisierung (nur Demo).
-- Ladezeit: Ziel <0,5 Sekunden für 2 Funktionen.
-- Kompatibilität: Julia 1.11.5+, reiner Julia-Code.
-- Readme-Format: Readme.txt (Markdown-Leerzeilen-Problem intern gelöst).
-- Vergleich mit anderen Paketen:
-  - Opfunu: >500 Benchmarkfunktionen (Python, z. B. Ackley F12017), ohne Gradienten. Interner Vergleich, nicht öffentlich.
-  - CUTEst: Komplexe Installation. Unser Paket ist Julia-nativ.
-  - Optim.jl: Keine Testfunktionen. Unser Paket ergänzt.
-  - NLopt: C-basiert, keine Testfunktionen. Unser Paket kompatibel.
-  - Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Kompatibel für Hessian-basierte Optimierung.
+Projektstatus:
+- Modular structure: Test functions (rosenbrock.jl, sphere.jl) in src/functions/, each under 100 lines.
+- Test function integration: Via src/include_testfunctions.jl.
+- TestFunction structure: Refactored for clarity:
+  - Fields: f (function), grad (non-in-place gradient), gradient! (in-place gradient), meta (Dict with name, start, min_position, min_value, properties, lb, ub, description).
+  - Advantage: KISS-compliant, robust metadata validation.
+- Search domains: Implemented in meta[:lb], meta[:ub]:
+  - Rosenbrock: [-5, 5]^n (fill(-5.0, n), fill(5.0, n)).
+  - Sphere: [-5.12, 5.12]^n (fill(-5.12, n), fill(5.12, n)).
+- Gradient wrappers: grad (non-in-place) and gradient! (in-place) for Optim.jl, NLopt, and Hessian methods (Zygote.hessian with ForwardDiff.Dual support).
+- Tests: 60/60 tests in test/runtests.jl:
+  - Rosenbrock (28): Function values (f([0.5, 0.5]) ~ 6.5), gradients, edge cases (NaN, Inf, 1e-308), properties (multimodal, non-convex), start [0.0, 0.0], minimum [1.0, 1.0].
+  - Sphere (28): Function values (f([1.0, 1.0]) ~ 2.0), gradients, properties (unimodal, convex), start [0.0, 0.0], minimum [0.0, 0.0].
+  - Filter (4): Tests filter_testfunctions for convex/multimodal functions.
+  - Properties: Tests add_property.
+- Demos: Five scripts in examples/ (10-15 lines):
+  - Optimize_all_functions.jl: Optimizes all functions with L-BFGS, uses tf.gradient!.
+  - Compare_optimization_methods.jl: Compares Gradient Descent and L-BFGS on Rosenbrock.
+  - List_all_available_test_functions_and_their_properties.jl: Lists functions, start points, minima, properties.
+  - Optimize_with_nlopt.jl: Optimizes Rosenbrock with NLopt's LD_LBFGS.
+  - Compute_hessian_with_zygote.jl: Shows 3 Newton steps on Rosenbrock, fixed for ForwardDiff.Dual support.
+- Load time: Target < 0.5 seconds for two functions, to be optimized with FUNCTION_REGISTRY.
+- Compatibility: Julia 1.11.5+, pure Julia code.
+- Documentation: Readme.txt (plain text, no Markdown), file comments with path, purpose, context, timestamp.
+- Error handling: Replaced @assert with throw(ArgumentError(...)) for robustness.
+- Comparison with other packages:
+  - Opfunu: 500+ Python benchmark functions, no gradients (internal comparison, not public).
+  - CUTEst: Complex installation, our package is Julia-native.
+  - Optim.jl, NLopt, Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Compatible, our package adds test functions.
 
---- Hauptziele ---
-- Skalierbarkeit: Via include_testfunctions.jl.
-- Transparenz: Interne Details unsichtbar.
-- Erweiterbarkeit: Neue Funktionen via src/functions/, für CEC-Funktionen geplant.
-- Robustheit: Präzise Gradienten, Stabilität bei [1e-308, 1e-308].
-- Nutzerfreundlichkeit: Einfache Demos (~10–15 Zeilen).
-- Bekanntmachung: GitHub, Julia Discourse (zurückgestellt), Julia General Registry.
+Main Goals:
+- Scalability: Via include_testfunctions.jl and planned FUNCTION_REGISTRY.
+- Transparency: Internal details hidden via TestFunction and meta Dict.
+- Robustness: Precise gradients, stability at [1e-308, 1e-308], robust error handling.
+- User-friendliness: Minimal demos (10-15 lines), clear documentation.
 
---- Pläne für CEC-Funktionen ---
-- Ziel: Implementierung aller CEC 2017/2022 Funktionen (z. B. Ackley F12017, Rastrigin F22017).
-- Suchbereiche: Alle CEC-Funktionen haben Suchbereich (z. B. [-100, 100]^n für CEC 2017/2022), in meta[:lb], meta[:ub] speichern.
-- Metadaten: meta[:cec_id] (z. B. "F12017") statt properties-Missbrauch (z. B. Set(["F12017"])).
-- Ackley: Vorkommen in CEC 2005 (F1), 2017 (F1), hybride Funktionen (z. B. CEC 2022 F6). Start mit reiner Ackley (F12017).
-- Implementierung: src/functions/ackley.jl (~40 Zeilen, f, grad, gradient!, meta), später für alle 30 CEC 2017 Funktionen (~1200 Zeilen).
-- Tests: ~20 Tests pro CEC-Funktion (Funktionswerte, Gradienten, Suchbereiche, meta[:cec_id]).
-- Demos: Wiederverwende Newton/L-BFGS-Demos (~10–15 Zeilen).
-
---- Todo-Liste ---
-- Refaktoriere TestFunction: Packe start, min_position, min_value, name, properties, lb, ub in meta Dict (src/NonlinearOptimizationTestFunctionsInJulia.jl).
-- Füge Suchbereiche für Rosenbrock ([(-5, 5)^n]), Sphere ([(-5.12, 5.12)^n]) in meta[:lb], meta[:ub] hinzu (src/functions/rosenbrock.jl, sphere.jl).
-- Passe Demos an neue Struktur an (tf.start → tf.meta[:start], etc.).
-- Unterlauf-Tests: Für [1e-308, 1e-308] in test/runtests.jl.
-- Ladezeit testen:
+Todo List:
+- Finalize TestFunction refactoring: Use meta Dict for all metadata (src/NonlinearOptimizationTestFunctionsInJulia.jl).
+- Optimize load time: Implement FUNCTION_REGISTRY in src/registry.jl.
+- Add numerical gradient tests in test/runtests.jl.
+- Update demos: Use tf.meta[:start], etc., in examples/*.jl.
+- Test load time:
   @time include("src/NonlinearOptimizationTestFunctionsInJulia.jl")
   @time sphere([1.0, 1.0])
-  Ziel: <0,5 Sekunden.
-- Readme.txt: Aktualisiert mit Newton-Demo, Suchbereichen, CEC-Plänen.
-- Project.toml: NLopt als optionale Abhängigkeit.
-- Discourse-Post: Zurückgestellt, ohne Opfunu, mit Hinweis auf CEC-Pläne.
+  Target: < 0.5 seconds.
+- Update Readme.txt: Add new structure, search domains, error handling, plain text only.
+- Update Zwischenbericht.txt: Reflect refactoring, error handling, plain text only.
+- File comments: Add to all files (src/, examples/, test/) with path, purpose, context, timestamp.
+- Project.toml: Keep NLopt as optional dependency.
 
---- Nächste Schritte ---
-- Implementiere neue TestFunction-Struktur (meta Dict).
-- Aktualisiere rosenbrock.jl, sphere.jl mit meta[:lb], meta[:ub].
-- Passe Demos an (examples/*.jl, ~10–15 Zeilen).
-- Test-Suite: Unterlauf-Tests hinzufügen.
-- Ladezeit testen (<0,5 Sekunden).
-- Readme.txt: Ergänze CEC-Pläne, neue Struktur.
+Next Steps:
+- Implement FUNCTION_REGISTRY in src/registry.jl.
+- Add numerical gradient tests in test/runtests.jl.
+- Add tolerances (e.g., ftol_rel=1e-6) in examples/*.jl.
+- Enhance documentation with docstrings and Documenter.jl.
 - Commit:
-  git add src/ Project.toml Readme.txt docs/interim_reports/Zwischenbericht.txt examples/
-  git commit -m "Refactor TestFunction to pack metadata into meta Dict, add search domains for Rosenbrock/Sphere, update Zwischenbericht with CEC plans"
+  git add src/ Project.toml Readme.txt docs/interim_reports/Zwischenbericht.txt examples/ test/
+  git commit -m "Refactor TestFunction with meta-only fields, add ForwardDiff.Dual support, add search domains for Rosenbrock/Sphere, improve error handling with throw(ArgumentError), secure exports with try-catch, update Readme.txt and Zwischenbericht.txt"
   git push origin main
-- CEC: Starte mit Ackley (F12017) als Pilot (~40 Zeilen), später alle 30 CEC 2017 Funktionen.
 
---- Begründung ---
-- Neue Struktur: Vereinfacht TestFunction (3 Felder statt 9), KISS-konform, CEC-ready.
-- Suchbereiche: Notwendig für CEC-Kompatibilität, für Rosenbrock/Sphere konsistent definiert.
-- Demos: Ultra-minimal (~11 Zeilen), gradientenbasiert (tf.grad, tf.gradient!), Julia-nativ.
-- CEC-Pläne: Ackley (F12017) als Start, meta[:cec_id] sauberer als properties-Missbrauch.
-- Opfunu: Interner Vergleich, nicht öffentlich.
-- KISS: Keine neuen Funktionen jetzt, Fokus auf Struktur und Tests.
+Improvement Suggestions:
+- Numerical gradient tests: Add in test/runtests.jl for gradient accuracy.
+- Tolerances in demos: Add ftol_rel (e.g., 1e-6) in examples/*.jl.
+- Documentation: Add docstrings for use_testfunction, filter_testfunctions, and core functions.
+- Registry: Use FUNCTION_REGISTRY Dict in src/registry.jl for faster loading.
+
+Justification:
+- New structure: Simplifies TestFunction (4 fields), KISS-compliant.
+- Search domains: Added for Rosenbrock and Sphere, consistent with standards.
+- Error handling: throw(ArgumentError(...)) ensures robustness.
+- ForwardDiff support: Fixes Compute_hessian_with_zygote.jl.
+- Demos: Minimal (10-15 lines), gradient-based, Julia-native.
+- Plain text: Readme.txt and Zwischenbericht.txt avoid Markdown issues.
+- File comments: Improve transparency and maintainability.
+- Opfunu: Internal comparison only, not public.
+- KISS: Focus on structure, tests, and robustness.
