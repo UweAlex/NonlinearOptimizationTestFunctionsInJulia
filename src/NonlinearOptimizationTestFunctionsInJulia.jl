@@ -28,7 +28,7 @@ struct TestFunction
         isempty(missing_keys) || throw(ArgumentError("Missing required meta keys: $missing_keys"))
         meta[:properties] = Set(lowercase.(string.(meta[:properties])))
         all(p in VALID_PROPERTIES for p in meta[:properties]) || throw(ArgumentError("Invalid properties: $(setdiff(meta[:properties], VALID_PROPERTIES))"))
-        gradient! = (G, xස, x) -> copyto!(G, grad(x))
+        gradient! = (G, x) -> copyto!(G, grad(x))
         new(f, grad, gradient!, meta)
     end
 end

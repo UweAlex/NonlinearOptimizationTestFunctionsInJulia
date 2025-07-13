@@ -1,5 +1,5 @@
 NonlinearOptimizationTestFunctionsInJulia
-Last modified: 11. Juli 2025, 14:20 PM CEST
+Last modified: 13. Juli 2025, 23:00 PM CEST
 
 Purpose
 Provides test functions for nonlinear optimization in Julia, including Rosenbrock and Sphere, with analytical gradients and metadata for use with optimization packages like Optim.jl, NLopt, and others.
@@ -23,11 +23,11 @@ julia> sphere([1.0, 1.0])
 - Use with optimization libraries:
 julia> using Optim
 julia> tf = ROSENBROCK_FUNCTION
-julia> optimize(tf.f, tf.gradient!, tf.meta[:start](2), LBFGS(), Optim.Options(f_reltol=1e-6))
+julia> optimize(tf.f, tf.grad, tf.meta[:start](2), LBFGS(), Optim.Options(f_reltol=1e-6))
 
 Test Functions
-- Rosenbrock: Multimodal, non-convex, non-separable, differentiable, scalable. Minimum at [1.0, ..., 1.0] with value 0.0.
-- Sphere: Unimodal, convex, separable, differentiable, scalable. Minimum at [0.0, ..., 0.0] with value 0.0.
+- Rosenbrock: Multimodal, non-convex, non-separable, differentiable, scalable, bounded. Minimum at [1.0, ..., 1.0] with value 0.0.
+- Sphere: Unimodal, convex, separable, differentiable, scalable, bounded. Minimum at [0.0, ..., 0.0] with value 0.0.
 - Access via TEST_FUNCTIONS dictionary:
 julia> TEST_FUNCTIONS["Rosenbrock"]
 ROSENBROCK_FUNCTION
@@ -43,18 +43,17 @@ julia> SPHERE_FUNCTION.meta[:start](4)
 
 Demos
 Five example scripts in examples/ (10-15 lines each):
-- Optimize_all_functions.jl: Optimizes all functions with L-BFGS.
-- Compare_optimization_methods.jl: Compares Gradient Descent and L-BFGS on Rosenbrock.
+- Optimize_all_functions.jl: Optimizes all functions with L-BFGS using tf.grad.
+- Compare_optimization_methods.jl: Compares Gradient Descent and L-BFGS on Rosenbrock using tf.grad.
 - List_all_available_test_functions_and_their_properties.jl: Lists functions, start points, minima, properties.
 - Optimize_with_nlopt.jl: Optimizes Rosenbrock with NLopt's LD_LBFGS (requires NLopt.jl).
 - Compute_hessian_with_zygote.jl: Performs 3 Newton steps on Rosenbrock using Zygote's Hessian.
 
 Tests
-- 64 tests in test/runtests.jl:
-  - Function values, gradients, numerical gradient accuracy, edge cases (NaN, Inf, 1e-308).
-  - Properties (multimodal, convex, etc.).
-  - Scalable metadata for n=2 and n=3.
-  - Filtering and property manipulation.
+- 74 tests in test/runtests.jl:
+  - Rosenbrock (28): Function values, gradients, numerical accuracy, edge cases, properties.
+  - Sphere (28): Function values, gradients, numerical accuracy, edge cases, properties.
+  - Filtering (4), properties (6), scalable metadata (8).
 - Run tests:
 julia> include("test/runtests.jl")
 

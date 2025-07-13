@@ -9,7 +9,7 @@ Pkg.instantiate()
 using NonlinearOptimizationTestFunctionsInJulia
 using Test
 println("\nFühre alle Tests aus...")
-include("test/runtests.jl")
+include("runtests.jl")
 println("\nManuelle Tests für Rosenbrock und Sphere...")
 @test rosenbrock([1.0, 1.0]) ≈ 0.0
 @test rosenbrock([0.5, 0.5]) ≈ 6.5
@@ -66,9 +66,9 @@ catch e
     println("Fehlerbehandlung (Eigenschaften): OK")
 end
 println("\nFühre Demos aus (ohne NLopt)...")
-include("examples/Optimize_all_functions.jl")
-include("examples/Compare_optimization_methods.jl")
-include("examples/List_all_available_test_functions_and_their_properties.jl")
-include("examples/Compute_hessian_with_zygote.jl")
+include("../examples/Optimize_all_functions.jl")
+include("../examples/Compare_optimization_methods.jl")
+include("../examples/List_all_available_test_functions_and_their_properties.jl")
+include("../examples/Compute_hessian_with_zygote.jl")
 println("Demos (ohne NLopt): OK")
 println("\nAlle Tests abgeschlossen. Überprüfe die Ausgabe auf Fehler.")
