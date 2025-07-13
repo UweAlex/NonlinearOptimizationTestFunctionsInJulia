@@ -1,5 +1,5 @@
 NonlinearOptimizationTestFunctionsInJulia - Zwischenbericht
-Stand: 13. Juli 2025, 11:00 AM CEST
+Stand: 13. Juli 2025, 23:00 PM CEST
 
 Analyse von Markdown-Rendering-Problemen
 Stand: 12. Juli 2025, 10:05 AM CEST
@@ -27,15 +27,15 @@ Projektstatus:
     - Rosenbrock: [-5, 5]^n (meta[:lb](n) = fill(-5.0, n), meta[:ub](n) = fill(5.0, n)).
     - Sphere: [-5.12, 5.12]^n (meta[:lb](n) = fill(-5.12, n), meta[:ub](n) = fill(5.12, n)).
 - Gradienten-Wrapper: grad (nicht-in-place) und gradient! (in-place) für Optim.jl, NLopt und Hessian-Methoden (Zygote.hessian mit Unterstützung für ForwardDiff.Dual).
-- Tests: 64/64 Tests in test/runtests.jl:
-    - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ~ 6.5), Gradienten, numerische Gradientengenauigkeit, Randfälle (NaN, Inf, 1e-308), Eigenschaften (multimodal, nicht-konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [1.0, 1.0].
-    - Sphere (28): Funktionswerte (f([1.0, 1.0]) ~ 2.0), Gradienten, numerische Gradientengenauigkeit, Eigenschaften (unimodal, konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [0.0, 0.0].
+- Tests: 74/74 Tests in test/runtests.jl:
+    - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ~ 6.5), Gradienten, numerische Gradientengenauigkeit, Randfälle (NaN, Inf, 1e-308), Eigenschaften (multimodal, nicht-konvex, bounded), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [1.0, 1.0].
+    - Sphere (28): Funktionswerte (f([1.0, 1.0]) ~ 2.0), Gradienten, numerische Gradientengenauigkeit, Eigenschaften (unimodal, konvex, bounded), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [0.0, 0.0].
     - Filter (4): Testet filter_testfunctions für konvexe/multimodale Funktionen.
-    - Eigenschaften (4): Testet add_property.
-    - Skalierbare Metadaten (4): Testet meta[:lb](n), meta[:ub](n), meta[:start](n), meta[:min_position](n) für n=3.
+    - Eigenschaften (6): Testet add_property, einschließlich bounded.
+    - Skalierbare Metadaten (8): Testet meta[:lb](n), meta[:ub](n), meta[:start](n), meta[:min_position](n) für n=3.
 - Demos: Fünf Skripte in examples/ (10-15 Zeilen):
-    - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, verwendet tf.gradient!, ftol_rel=1e-6, meta[:start](n).
-    - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS bei Rosenbrock, ftol_rel=1e-6, meta[:start](n).
+    - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, verwendet tf.grad, ftol_rel=1e-6, meta[:start](n).
+    - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS bei Rosenbrock, verwendet tf.grad, ftol_rel=1e-6, meta[:start](n).
     - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen, Startpunkte, Minima, Eigenschaften.
     - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt's LD_LBFGS, ftol_rel=1e-6, meta[:lb](n), meta[:ub](n).
     - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte bei Rosenbrock, korrigiert für ForwardDiff.Dual-Unterstützung.
@@ -49,6 +49,8 @@ Projektstatus:
     - Docstrings für interne Funktionen (has_property, add_property, use_testfunction, filter_testfunctions) entfernt, um Dokumentations-Warnungen zu vermeiden.
     - Dimension-Validierung (n >= 2) in meta-Funktionen von Rosenbrock hinzugefügt, um ungültige Eingaben zu verhindern.
     - Korrektur in test/runtests.jl: Test für SPHERE_FUNCTION.meta[:ub](3) angepasst, um die korrekte obere Schranke [5.12, 5.12, 5.12] zu erwarten.
+    - Korrektur in Optimize_all_functions.jl und Compare_optimization_methods.jl: Verwendung von tf.grad statt tf.gradient! für Optim.jl-Kompatibilität.
+    - Eigenschaft "bounded" zu meta[:properties] in rosenbrock.jl und sphere.jl hinzugefügt, um Konsistenz mit Tests zu gewährleisten.
 - Vergleich mit anderen Paketen:
     - Opfunu: 500+ Python-Benchmark-Funktionen, keine Gradienten (interner Vergleich, nicht öffentlich).
     - CUTEst: Komplexe Installation, unser Paket ist Julia-nativ.
@@ -72,8 +74,8 @@ Nächste Schritte:
 - Documenter.jl für HTML-Dokumentation hinzufügen.
 - Ladezeit testen und optimieren, falls nötig.
 - Commit:
-    git add src/NonlinearOptimizationTestFunctionsInJulia.jl src/functions/rosenbrock.jl test/runtests.jl docs/interim_reports/Zwischenbericht.txt
-    git commit -m "meta[:properties] in lowercase, filter_testfunctions vereinfacht, Docstrings für interne Funktionen entfernt, Dimension-Validierung für Rosenbrock meta-Funktionen hinzugefügt, Test für SPHERE_FUNCTION.meta[:ub] korrigiert, Zwischenbericht aktualisiert, Zeitstempel auf 13. Juli 2025, 11:00 AM CEST"
+    git add src/NonlinearOptimizationTestFunctionsInJulia.jl src/functions/rosenbrock.jl src/functions/sphere.jl test/runtests.jl docs/interim_reports/Zwischenbericht.txt Readme.txt
+    git commit -m "meta[:properties] in lowercase, filter_testfunctions vereinfacht, Docstrings für interne Funktionen entfernt, Dimension-Validierung für Rosenbrock meta-Funktionen hinzugefügt, Test für SPHERE_FUNCTION.meta[:ub] korrigiert, tf.grad in Optimize_all_functions.jl und Compare_optimization_methods.jl verwendet, bounded zu meta[:properties] hinzugefügt, Zwischenbericht aktualisiert, Zeitstempel auf 13. Juli 2025, 23:00 PM CEST"
     git push origin main
 
 Verbesserungsvorschläge:
