@@ -1,43 +1,73 @@
 NonlinearOptimizationTestFunctionsInJulia
-Last modified: 11. Juli 2025, 10:23 AM CEST
+Last modified: 11. Juli 2025, 14:20 PM CEST
 
-Purpose:
-This Julia package provides test functions for nonlinear optimization, including Rosenbrock and Sphere, with analytical gradients and metadata. It is designed to be simple, scalable, and compatible with Optim.jl, NLopt, and Hessian-based methods.
+Purpose
+Provides test functions for nonlinear optimization in Julia, including Rosenbrock and Sphere, with analytical gradients and metadata for use with optimization packages like Optim.jl, NLopt, and others.
 
-Features:
-- Modular structure: Test functions in src/functions/ (rosenbrock.jl, sphere.jl), each under 100 lines.
-- TestFunction structure: Contains f (function), grad (non-in-place gradient), gradient! (in-place gradient), and meta (Dict with name, start, min_position, min_value, properties, lb, ub, description).
-- Search domains: Defined in meta[:lb] and meta[:ub], e.g., [-5, 5]^n for Rosenbrock, [-5.12, 5.12]^n for Sphere.
-- Compatibility: Pure Julia, supports Julia 1.11.5+, Optim.jl, NLopt, and Hessian methods (Zygote.hessian with ForwardDiff.Dual support).
-- Tests: 60/60 tests in test/runtests.jl, covering function values, gradients, edge cases (NaN, Inf, 1e-308), and properties (e.g., multimodal, convex).
-- Demos: Five minimal scripts (10-15 lines) in examples/, e.g., Optimize_all_functions.jl (L-BFGS), Compare_optimization_methods.jl (Gradient Descent vs. L-BFGS), Optimize_with_nlopt.jl, Compute_hessian_with_zygote.jl (fixed for ForwardDiff.Dual).
-- Load time: Target < 0.5 seconds for two functions.
-- Error handling: Replaced @assert with throw(ArgumentError(...)) for robustness.
+Installation
+- Requires Julia 1.11.5+
+- Dependencies: LinearAlgebra, Optim, Test, ForwardDiff, Zygote
+- Optional: NLopt for specific demos
+julia> using Pkg
+julia> Pkg.activate(".")
+julia> Pkg.instantiate()
 
-Usage:
-1. Install: Clone from GitHub (Julia General Registry planned).
-2. Load: using NonlinearOptimizationTestFunctionsInJulia
-3. Example (L-BFGS optimization):
-   tf = NonlinearOptimizationTestFunctionsInJulia.ROSENBROCK_FUNCTION
-   result = optimize(tf.f, tf.gradient!, tf.meta[:start], LBFGS())
-   println("$(tf.meta[:name]): $(Optim.minimizer(result)), $(Optim.minimum(result))")
-4. List functions: Run examples/List_all_available_test_functions_and_their_properties.jl.
+Usage
+- Load the module: using NonlinearOptimizationTestFunctionsInJulia
+- Access test functions: ROSENBROCK_FUNCTION, SPHERE_FUNCTION
+- Evaluate functions and gradients:
+julia> rosenbrock([0.5, 0.5])
+6.5
+julia> sphere([1.0, 1.0])
+2.0
+- Use with optimization libraries:
+julia> using Optim
+julia> tf = ROSENBROCK_FUNCTION
+julia> optimize(tf.f, tf.gradient!, tf.meta[:start](2), LBFGS(), Optim.Options(f_reltol=1e-6))
 
-Planned Improvements:
-- Optimize load time with FUNCTION_REGISTRY in src/registry.jl.
-- Add numerical gradient tests in test/runtests.jl.
-- Enhance documentation with docstrings and Documenter.jl.
-- Add tolerances (e.g., ftol_rel=1e-6) in demos.
+Test Functions
+- Rosenbrock: Multimodal, non-convex, non-separable, differentiable, scalable. Minimum at [1.0, ..., 1.0] with value 0.0.
+- Sphere: Unimodal, convex, separable, differentiable, scalable. Minimum at [0.0, ..., 0.0] with value 0.0.
+- Access via TEST_FUNCTIONS dictionary:
+julia> TEST_FUNCTIONS["Rosenbrock"]
+ROSENBROCK_FUNCTION
 
-Dependencies:
-- Required: LinearAlgebra, Optim, Zygote, Test
-- Optional: NLopt (for examples/Optimize_with_nlopt.jl)
+Metadaten
+The metadata :start, :min_position, :lb, and :ub are defined as functions accepting a dimension parameter n (default: 2). Example:
+julia> ROSENBROCK_FUNCTION.meta[:lb](3)
+3-element Vector{Float64}: [-5.0, -5.0, -5.0]
+julia> SPHERE_FUNCTION.meta[:start](4)
+4-element Vector{Float64}: [0.0, 0.0, 0.0, 0.0]
+- Rosenbrock bounds: [-5.0, 5.0]^n
+- Sphere bounds: [-5.12, 5.12]^n
 
-Notes:
-- No Markdown used to avoid rendering issues.
-- File comments in src/, examples/, test/ include path, purpose, context, and timestamp.
-- Comparison with Opfunu (Python, 500+ functions, no gradients) is internal, not public.
-- Future: Julia Discourse post (deferred).
+Demos
+Five example scripts in examples/ (10-15 lines each):
+- Optimize_all_functions.jl: Optimizes all functions with L-BFGS.
+- Compare_optimization_methods.jl: Compares Gradient Descent and L-BFGS on Rosenbrock.
+- List_all_available_test_functions_and_their_properties.jl: Lists functions, start points, minima, properties.
+- Optimize_with_nlopt.jl: Optimizes Rosenbrock with NLopt's LD_LBFGS (requires NLopt.jl).
+- Compute_hessian_with_zygote.jl: Performs 3 Newton steps on Rosenbrock using Zygote's Hessian.
 
-Contact:
-GitHub repository (link TBD), Julia Discourse (deferred).
+Tests
+- 64 tests in test/runtests.jl:
+  - Function values, gradients, numerical gradient accuracy, edge cases (NaN, Inf, 1e-308).
+  - Properties (multimodal, convex, etc.).
+  - Scalable metadata for n=2 and n=3.
+  - Filtering and property manipulation.
+- Run tests:
+julia> include("test/runtests.jl")
+
+Features
+- Scalable: Functions and metadata support arbitrary dimensions via parameter n.
+- Robust: Handles edge cases (NaN, Inf, 1e-308) with appropriate error handling.
+- Compatible: Works with Optim.jl, NLopt, and automatic differentiation (ForwardDiff, Zygote).
+- Modular: Test functions loaded via src/include_testfunctions.jl and TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl.
+
+Contributing
+- Add new test functions in src/functions/ and include them in src/include_testfunctions.jl.
+- Ensure new functions provide f, grad, gradient!, and meta with required keys (:name, :start, :min_position, :min_value, :properties, :lb, :ub).
+- Run tests to verify compatibility.
+
+License
+MIT License
