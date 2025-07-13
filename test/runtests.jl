@@ -1,7 +1,7 @@
 # test/runtests.jl
 # Purpose: Tests for NonlinearOptimizationTestFunctionsInJulia, covering function values, gradients, Hessians, and metadata.
 # Context: Ensures correctness of Rosenbrock, Sphere, and filtering functionality.
-# Last modified: 11. Juli 2025, 14:10 PM CEST
+# Last modified: 13. Juli 2025, 11:00 AM CEST
 using Test, ForwardDiff, Zygote, LinearAlgebra
 using NonlinearOptimizationTestFunctionsInJulia
 function finite_difference_gradient(f, x, h=1e-6)
@@ -105,7 +105,7 @@ end
         @test ROSENBROCK_FUNCTION.meta[:start](3) == fill(0.0, 3)
         @test ROSENBROCK_FUNCTION.meta[:min_position](3) == fill(1.0, 3)
         @test SPHERE_FUNCTION.meta[:lb](3) == fill(-5.12, 3)
-        @test SPHERE_FUNCTION.meta[:ub](3) == fill(-5.12, 3)
+        @test SPHERE_FUNCTION.meta[:ub](3) == fill(5.12, 3)
         @test SPHERE_FUNCTION.meta[:start](3) == fill(0.0, 3)
         @test SPHERE_FUNCTION.meta[:min_position](3) == fill(0.0, 3)
     end

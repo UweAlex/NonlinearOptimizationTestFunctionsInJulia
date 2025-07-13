@@ -1,7 +1,7 @@
 # src/NonlinearOptimizationTestFunctionsInJulia.jl
 # Purpose: Defines the core module for nonlinear optimization test functions.
 # Context: Provides TestFunction structure, metadata validation, and function registry.
-# Last modified: 11. Juli 2025, 10:23 AM CEST
+# Last modified: 13. Juli 2025, 10:45 AM CEST
 
 module NonlinearOptimizationTestFunctionsInJulia
 
@@ -26,29 +26,23 @@ struct TestFunction
         required_keys = [:name, :start, :min_position, :min_value, :properties, :lb, :ub]
         missing_keys = setdiff(required_keys, keys(meta))
         isempty(missing_keys) || throw(ArgumentError("Missing required meta keys: $missing_keys"))
-        meta[:properties] isa Set || throw(ArgumentError("meta[:properties] must be a Set"))
+        meta[:properties] = Set(lowercase.(string.(meta[:properties])))
         all(p in VALID_PROPERTIES for p in meta[:properties]) || throw(ArgumentError("Invalid properties: $(setdiff(meta[:properties], VALID_PROPERTIES))"))
-        gradient! = (G, x) -> copyto!(G, grad(x))
+        gradient! = (G, xස, x) -> copyto!(G, grad(x))
         new(f, grad, gradient!, meta)
     end
 end
 
-"""
-    has_property(tf::TestFunction, prop::String) -> Bool
-Checks if the test function `tf` has the specified property `prop`.
-Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
-"""
+# Checks if the test function `tf` has the specified property `prop`.
+# Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
 function has_property(tf::TestFunction, prop::String)
     lprop = lowercase(prop)
     lprop in VALID_PROPERTIES || throw(ArgumentError("Invalid property: $lprop"))
     return lprop in tf.meta[:properties]
 end
 
-"""
-    add_property(tf::TestFunction, prop::String) -> TestFunction
-Adds the property `prop` to the test function `tf` and returns a new TestFunction.
-Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
-"""
+# Adds the property `prop` to the test function `tf` and returns a new TestFunction.
+# Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
 function add_property(tf::TestFunction, prop::String)
     lprop = lowercase(prop)
     lprop in VALID_PROPERTIES || throw(ArgumentError("Invalid property: $lprop"))
@@ -57,30 +51,16 @@ function add_property(tf::TestFunction, prop::String)
     return TestFunction(tf.f, tf.grad, new_meta)
 end
 
-"""
-    use_testfunction(tf::TestFunction, x::Vector{T}) where {T<:Union{Real, ForwardDiff.Dual}} -> NamedTuple
-Evaluates the test function `tf` and its gradient at point `x`.
-Throws an `ArgumentError` if `x` is empty.
-Returns a named tuple with fields `f` (function value) and `grad` (gradient).
-"""
+# Evaluates the test function `tf` and its gradient at point `x`.
+# Throws an `ArgumentError` if `x` is empty.
+# Returns a named tuple with fields `f` (function value) and `grad` (gradient).
 function use_testfunction(tf::TestFunction, x::Vector{T}) where {T<:Union{Real, ForwardDiff.Dual}}
     isempty(x) && throw(ArgumentError("Input vector x must not be empty"))
     return (f=tf.f(x), grad=tf.grad(x))
 end
 
-"""
-    filter_testfunctions(predicate::Function) -> Vector{TestFunction}
-Filters test functions from `TEST_FUNCTIONS` based on the given predicate.
-"""
-function filter_testfunctions(predicate::Function)
-    return [tf for tf in values(TEST_FUNCTIONS) if predicate(tf)]
-end
-
-"""
-    filter_testfunctions(test_functions::Dict{String, TestFunction}, predicate::Function) -> Vector{TestFunction}
-Filters test functions from a given dictionary based on the predicate.
-"""
-function filter_testfunctions(test_functions::Dict{String, TestFunction}, predicate::Function)
+# Filters test functions from `test_functions` based on the given predicate.
+function filter_testfunctions(predicate::Function, test_functions=TEST_FUNCTIONS)
     return [tf for tf in values(test_functions) if predicate(tf)]
 end
 

@@ -1,36 +1,58 @@
 NonlinearOptimizationTestFunctionsInJulia - Zwischenbericht
-Stand: 11. Juli 2025, 14:21 PM CEST
+Stand: 13. Juli 2025, 11:00 AM CEST
+
+Analyse von Markdown-Rendering-Problemen
+Stand: 12. Juli 2025, 10:05 AM CEST
+Problem: Bei der Darstellung von Codeabschnitten in Markdown-Dokumenten bzw. Codefenstern mit Markdown-Formatzeichen traten Probleme auf, insbesondere mit der Firefox-Extension „Markdown Viewer“. Codeblöcke, die mit (z. B. julia) definiert waren, wurden nicht korrekt gerendert, und Inhalte „flutschten“ aus den Blöcken heraus.
+Lösung:
+    Hauptänderung: Der Wechsel von Markdown-Codeblocks (```) zu einer Einrückung mit vier Leerzeichen für Codeabschnitte war der entscheidende Workaround. Dies stellt sicher, dass die Firefox-Extension Code korrekt als separaten Block rendert.
+    Zusätzliche Anpassungen:
+        Einführung klarer Abschnittsheader (z. B. ## Installation, ## Dependencies) zur Verbesserung der Struktur und möglichen Erleichterung des Parsings.
+        Reduzierung überflüssiger Leerzeilen, um Parsing-Fehler zu minimieren.
+        Entfernen der Sprache-Spezifikation (z. B. ```julia), da die Einrückung allein ausreichend war.
+Fazit: Die Einrückung mit vier Leerzeichen war der primäre Erfolgsfaktor. Die klare Strukturierung durch Header und konsistente Formatierung könnten zusätzlich zur Stabilität beigetragen haben.
+Empfehlungen:
+    Fortfahren mit vier Leerzeichen für Codeabschnitte, um Kompatibilitätsprobleme mit Markdown-Viewern zu vermeiden.
+    Beibehaltung von Abschnittsheadern zur Verbesserung der Lesbarkeit.
+    Testen der Darstellung mit anderen Markdown-Viewern, um universelle Kompatibilität sicherzustellen.
+    Langfristig: Umstellung auf HTML-Dokumentation mit Documenter.jl, um Markdown-Probleme zu umgehen.
 
 Projektstatus:
 - Modulare Struktur: Testfunktionen (rosenbrock.jl, sphere.jl) in src/functions/, jeweils unter 100 Zeilen.
 - Integration der Testfunktionen: Über src/include_testfunctions.jl und TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl.
 - TestFunction-Struktur: Überarbeitet für Klarheit:
-  - Felder: f (Funktion), grad (nicht-in-place Gradient), gradient! (in-place Gradient), meta (Dict mit Name, Startpunkt, Minimumsposition, Minimalwert, Eigenschaften, untere Grenze, obere Grenze, Beschreibung).
-  - Vorteil: KISS-konform, robuste Metadatenvalidierung.
+    - Felder: f (Funktion), grad (nicht-in-place Gradient), gradient! (in-place Gradient), meta (Dict mit Name, Startpunkt, Minimumsposition, Minimalwert, Eigenschaften, untere Grenze, obere Grenze, Beschreibung).
+    - Vorteil: KISS-konform, robuste Metadatenvalidierung.
 - Suchbereiche: Implementiert in meta[:lb](n), meta[:ub](n):
-  - Rosenbrock: [-5, 5]^n (meta[:lb](n) = fill(-5.0, n), meta[:ub](n) = fill(5.0, n)).
-  - Sphere: [-5.12, 5.12]^n (meta[:lb](n) = fill(-5.12, n), meta[:ub](n) = fill(5.12, n)).
+    - Rosenbrock: [-5, 5]^n (meta[:lb](n) = fill(-5.0, n), meta[:ub](n) = fill(5.0, n)).
+    - Sphere: [-5.12, 5.12]^n (meta[:lb](n) = fill(-5.12, n), meta[:ub](n) = fill(5.12, n)).
 - Gradienten-Wrapper: grad (nicht-in-place) und gradient! (in-place) für Optim.jl, NLopt und Hessian-Methoden (Zygote.hessian mit Unterstützung für ForwardDiff.Dual).
 - Tests: 64/64 Tests in test/runtests.jl:
-  - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ~ 6.5), Gradienten, numerische Gradientengenauigkeit, Randfälle (NaN, Inf, 1e-308), Eigenschaften (multimodal, nicht-konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [1.0, 1.0].
-  - Sphere (28): Funktionswerte (f([1.0, 1.0]) ~ 2.0), Gradienten, numerische Gradientengenauigkeit, Eigenschaften (unimodal, konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [0.0, 0.0].
-  - Filter (4): Testet filter_testfunctions für konvexe/multimodale Funktionen.
-  - Eigenschaften (4): Testet add_property.
-  - Skalierbare Metadaten (4): Testet meta[:lb](n), meta[:ub](n), meta[:start](n), meta[:min_position](n) für n=3.
+    - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ~ 6.5), Gradienten, numerische Gradientengenauigkeit, Randfälle (NaN, Inf, 1e-308), Eigenschaften (multimodal, nicht-konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [1.0, 1.0].
+    - Sphere (28): Funktionswerte (f([1.0, 1.0]) ~ 2.0), Gradienten, numerische Gradientengenauigkeit, Eigenschaften (unimodal, konvex), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [0.0, 0.0].
+    - Filter (4): Testet filter_testfunctions für konvexe/multimodale Funktionen.
+    - Eigenschaften (4): Testet add_property.
+    - Skalierbare Metadaten (4): Testet meta[:lb](n), meta[:ub](n), meta[:start](n), meta[:min_position](n) für n=3.
 - Demos: Fünf Skripte in examples/ (10-15 Zeilen):
-  - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, verwendet tf.gradient!, ftol_rel=1e-6, meta[:start](n).
-  - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS bei Rosenbrock, ftol_rel=1e-6, meta[:start](n).
-  - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen, Startpunkte, Minima, Eigenschaften.
-  - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt's LD_LBFGS, ftol_rel=1e-6, meta[:lb](n), meta[:ub](n).
-  - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte bei Rosenbrock, korrigiert für ForwardDiff.Dual-Unterstützung.
+    - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, verwendet tf.gradient!, ftol_rel=1e-6, meta[:start](n).
+    - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS bei Rosenbrock, ftol_rel=1e-6, meta[:start](n).
+    - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen, Startpunkte, Minima, Eigenschaften.
+    - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt's LD_LBFGS, ftol_rel=1e-6, meta[:lb](n), meta[:ub](n).
+    - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte bei Rosenbrock, korrigiert für ForwardDiff.Dual-Unterstützung.
 - Ladezeit: Ziel < 0.5 Sekunden für zwei Funktionen, optimiert mit TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl.
 - Kompatibilität: Julia 1.11.5+ ist installiert und bestätigt, reiner Julia-Code.
-- Dokumentation: Readme.txt (reiner Text, kein Markdown), Dateikommentare mit Pfad, Zweck, Kontext, Zeitstempel.
+- Dokumentation: Readme.txt (reiner Text, kein Markdown), erweitert mit Abschnitten für Testfunktionen, Demos, Tests, Features, Contributing und Lizenz. Dateikommentare mit Pfad, Zweck, Kontext, Zeitstempel.
 - Fehlerbehandlung: @assert durch throw(ArgumentError(...)) ersetzt für Robustheit.
+- Neue Änderungen (Stand 13. Juli 2025):
+    - meta[:properties] wird nun in lowercase gespeichert, um Konsistenz mit has_property zu gewährleisten.
+    - filter_testfunctions zu einer einzigen Methode mit Default-Parameter test_functions=TEST_FUNCTIONS vereinfacht.
+    - Docstrings für interne Funktionen (has_property, add_property, use_testfunction, filter_testfunctions) entfernt, um Dokumentations-Warnungen zu vermeiden.
+    - Dimension-Validierung (n >= 2) in meta-Funktionen von Rosenbrock hinzugefügt, um ungültige Eingaben zu verhindern.
+    - Korrektur in test/runtests.jl: Test für SPHERE_FUNCTION.meta[:ub](3) angepasst, um die korrekte obere Schranke [5.12, 5.12, 5.12] zu erwarten.
 - Vergleich mit anderen Paketen:
-  - Opfunu: 500+ Python-Benchmark-Funktionen, keine Gradienten (interner Vergleich, nicht öffentlich).
-  - CUTEst: Komplexe Installation, unser Paket ist Julia-nativ.
-  - Optim.jl, NLopt, Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Kompatibel, unser Paket fügt Testfunktionen hinzu.
+    - Opfunu: 500+ Python-Benchmark-Funktionen, keine Gradienten (interner Vergleich, nicht öffentlich).
+    - CUTEst: Komplexe Installation, unser Paket ist Julia-nativ.
+    - Optim.jl, NLopt, Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Kompatibel, unser Paket fügt Testfunktionen hinzu.
 
 Hauptziele:
 - Skalierbarkeit: Über include_testfunctions.jl und TEST_FUNCTIONS, meta[:lb](n), meta[:ub](n) für beliebige Dimensionen.
@@ -42,22 +64,28 @@ Aufgabenliste:
 - Dokumentation mit Documenter.jl für HTML-Ausgabe verbessern.
 - Paket im Julia General Registry registrieren.
 - Ladezeit testen:
-  @time include("src/NonlinearOptimizationTestFunctionsInJulia.jl")
-  @time sphere([1.0, 1.0])
-  Ziel: < 0.5 Sekunden.
+    @time include("src/NonlinearOptimizationTestFunctionsInJulia.jl")
+    @time sphere([1.0, 1.0])
+    Ziel: < 0.5 Sekunden.
 
 Nächste Schritte:
 - Documenter.jl für HTML-Dokumentation hinzufügen.
 - Ladezeit testen und optimieren, falls nötig.
 - Commit:
-  git add src/ Project.toml Readme.txt docs/interim_reports/Zwischenbericht.txt
-  git commit -m "Skalierbare Metadaten implementiert (lb, ub, start, min_position), FUNCTION_REGISTRY durch TEST_FUNCTIONS ersetzt, Readme.txt erweitert, Zeitstempel auf 11. Juli 2025, 14:21 PM CEST aktualisiert"
-  git push origin main
+    git add src/NonlinearOptimizationTestFunctionsInJulia.jl src/functions/rosenbrock.jl test/runtests.jl docs/interim_reports/Zwischenbericht.txt
+    git commit -m "meta[:properties] in lowercase, filter_testfunctions vereinfacht, Docstrings für interne Funktionen entfernt, Dimension-Validierung für Rosenbrock meta-Funktionen hinzugefügt, Test für SPHERE_FUNCTION.meta[:ub] korrigiert, Zwischenbericht aktualisiert, Zeitstempel auf 13. Juli 2025, 11:00 AM CEST"
+    git push origin main
 
 Verbesserungsvorschläge:
 - Dokumentation: Documenter.jl für HTML-Dokumentation verwenden.
 - Registry: TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl für schnellere Ladezeiten implementiert.
 - Tests: Erweiterung um weitere Testfunktionen und komplexere Szenarien.
+- Zukünftige Verbesserungsvorschläge mit geringer Priorität:
+    - Optionaler gradient!-Parameter im TestFunction-Konstruktor für benutzerdefinierte In-Place-Gradienten.
+    - Hinzufügen eines README.md mit minimaler Formatierung (vier Leerzeichen für Code, ## für Header) für bessere GitHub-Darstellung.
+    - Verbesserte Fehlerbehandlung in Demos, z. B. try-catch statt isdefined in Optimize_with_nlopt.jl.
+    - Modularisierung von test/runtests.jl in separate Dateien (test_rosenbrock.jl, test_sphere.jl, test_filter.jl) für bessere Wartbarkeit.
+    - Logging von Demo-Ausgaben in eine .txt-Datei für persistente Ergebnisse.
 
 Begründung:
 - Neue Struktur: Vereinfacht TestFunction (4 Felder), KISS-konform.
@@ -69,3 +97,32 @@ Begründung:
 - Dateikommentare: Verbessern Transparenz und Wartbarkeit.
 - Opfunu: Nur interner Vergleich, nicht öffentlich.
 - KISS: Fokus auf Struktur, Tests und Robustheit.
+
+Dokumentation Fortschritte (Stand Juli 2025)
+
+Überblick
+Die Dokumentation für NonlinearOptimizationTestFunctionsInJulia wurde mit Documenter.jl erfolgreich eingerichtet. Die Markdown-Dateien (index.md, installation.md, functions.md, demos.md, api.md) wurden im Verzeichnis docs/src/ erstellt, und die HTML-Dokumentation wird in docs/build/ generiert. Alle Dateien verwenden vier Leerzeichen für Codeblöcke, ## für Abschnittsheader und minimierte Leerzeilen, wie im ursprünglichen Zwischenbericht gefordert.
+
+Behebte Fehler
+Mehrere Fehler wurden während der Einrichtung behoben:
+- Falsches Verzeichnis: Ein anfänglicher Fehler (No such file or directory: docs/docs/make.jl) wurde durch Verschieben von make.jl nach docs/ korrigiert.
+- Fehlende Markdown-Dateien: Der Fehler 'installation.md' is not an existing page! wurde durch Erstellen der Markdown-Dateien in docs/src/ behoben.
+- Modul nicht gefunden: Der Fehler Package NonlinearOptimizationTestFunctionsInJulia not found wurde durch Aktivieren der Projektumgebung mit Pkg.activate(".") gelöst.
+- Syntaxfehler in make.jl: Ein ParseError aufgrund eines fehlenden Kommas nach warnonly = [:missing_docs] wurde durch Korrektur der Syntax behoben.
+- Fehlende Docstrings: Eine Warnung über fünf fehlende Docstrings (filter_testfunctions, add_property, has_property, use_testfunction) wurde durch Entfernen der Docstrings für interne Funktionen behoben, um den Build sauber abzuschließen.
+
+Behandlung der Docstring-Warnung
+Die Warnung über fehlende Docstrings betraf interne Hilfsfunktionen (filter_testfunctions, add_property, has_property, use_testfunction), die nicht für die öffentliche Dokumentation relevant sind. Die Docstrings wurden entfernt, um die Warnung zu beseitigen, ohne die Funktionalität der Dokumentation zu beeinträchtigen. Die Entscheidung, ob diese Funktionen exportiert und dokumentiert werden sollen, wird für eine spätere Veröffentlichung in der Julia General Registry getroffen.
+
+Nächste Schritte
+- Docstring-Integration: Für die Julia General Registry müssen die Docstrings für filter_testfunctions, add_property, has_property, und use_testfunction entweder eingebunden (durch Export und @docs-Blöcke) oder dauerhaft entfernt werden, um warnonly = false zu verwenden.
+- GitHub Pages: Einrichtung eines GitHub Actions-Workflows (docs.yml) für die automatische Veröffentlichung der Dokumentation auf GitHub Pages.
+- Doctests: Hinzufügen von @jldoctest-Blöcken in den Markdown-Dateien, um Beispiele wie rosenbrock([0.5, 0.5]) zu validieren.
+- Finale Überprüfung: Testen der Dokumentation mit warnonly = false, um sicherzustellen, dass alle Anforderungen für die Julia General Registry erfüllt sind.
+
+Testen der Dokumentation
+Die Dokumentation wird wie folgt generiert:
+    using Pkg
+    Pkg.activate(".")
+    include("docs/make.jl")
+Die generierte HTML-Dokumentation befindet sich in docs/build/. Öffne index.html im Browser, um das Ergebnis zu überprüfen.
