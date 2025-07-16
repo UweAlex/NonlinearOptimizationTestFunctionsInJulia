@@ -26,7 +26,7 @@
         rosenbrock,
         rosenbrock_gradient,
         Dict(
-            :name => "Rosenbrock",
+            :name => "rosenbrock",
             :start => (n::Int=2) -> begin
                 n >= 2 || throw(ArgumentError("Rosenbrock requires at least 2 dimensions"))
                 fill(0.0, n)

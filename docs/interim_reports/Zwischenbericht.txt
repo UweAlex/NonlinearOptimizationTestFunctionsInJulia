@@ -1,130 +1,180 @@
-NonlinearOptimizationTestFunctionsInJulia - Zwischenbericht
-Stand: 13. Juli 2025, 23:00 PM CEST
+Zwischenbericht: NonlinearOptimizationTestFunctionsInJulia
 
-Analyse von Markdown-Rendering-Problemen
-Stand: 12. Juli 2025, 10:05 AM CEST
-Problem: Bei der Darstellung von Codeabschnitten in Markdown-Dokumenten bzw. Codefenstern mit Markdown-Formatzeichen traten Probleme auf, insbesondere mit der Firefox-Extension „Markdown Viewer“. Codeblöcke, die mit (z. B. julia) definiert waren, wurden nicht korrekt gerendert, und Inhalte „flutschten“ aus den Blöcken heraus.
-Lösung:
-    Hauptänderung: Der Wechsel von Markdown-Codeblocks (```) zu einer Einrückung mit vier Leerzeichen für Codeabschnitte war der entscheidende Workaround. Dies stellt sicher, dass die Firefox-Extension Code korrekt als separaten Block rendert.
-    Zusätzliche Anpassungen:
-        Einführung klarer Abschnittsheader (z. B. ## Installation, ## Dependencies) zur Verbesserung der Struktur und möglichen Erleichterung des Parsings.
-        Reduzierung überflüssiger Leerzeilen, um Parsing-Fehler zu minimieren.
-        Entfernen der Sprache-Spezifikation (z. B. ```julia), da die Einrückung allein ausreichend war.
-Fazit: Die Einrückung mit vier Leerzeichen war der primäre Erfolgsfaktor. Die klare Strukturierung durch Header und konsistente Formatierung könnten zusätzlich zur Stabilität beigetragen haben.
-Empfehlungen:
-    Fortfahren mit vier Leerzeichen für Codeabschnitte, um Kompatibilitätsprobleme mit Markdown-Viewern zu vermeiden.
-    Beibehaltung von Abschnittsheadern zur Verbesserung der Lesbarkeit.
-    Testen der Darstellung mit anderen Markdown-Viewern, um universelle Kompatibilität sicherzustellen.
-    Langfristig: Umstellung auf HTML-Dokumentation mit Documenter.jl, um Markdown-Probleme zu umgehen.
+Datum: 16. Juli 2025
+Zeit: 09:10 AM CEST
+Kontext: Entwicklung eines Julia-Pakets zur Bereitstellung von Testfunktionen für nichtlineare Optimierung, mit dem Ziel, Vergleichsprojekte in jedem Detail zu übertreffen, alle Testfunktionen aus Test functions for optimization needs (Molga & Smutnicki, 2005) schnell zu implementieren, beginnend mit Tests für Rastrigin, und das Paket im Julia General Registry zu registrieren.
 
-Projektstatus:
-- Modulare Struktur: Testfunktionen (rosenbrock.jl, sphere.jl) in src/functions/, jeweils unter 100 Zeilen.
-- Integration der Testfunktionen: Über src/include_testfunctions.jl und TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl.
-- TestFunction-Struktur: Überarbeitet für Klarheit:
-    - Felder: f (Funktion), grad (nicht-in-place Gradient), gradient! (in-place Gradient), meta (Dict mit Name, Startpunkt, Minimumsposition, Minimalwert, Eigenschaften, untere Grenze, obere Grenze, Beschreibung).
-    - Vorteil: KISS-konform, robuste Metadatenvalidierung.
-- Suchbereiche: Implementiert in meta[:lb](n), meta[:ub](n):
-    - Rosenbrock: [-5, 5]^n (meta[:lb](n) = fill(-5.0, n), meta[:ub](n) = fill(5.0, n)).
-    - Sphere: [-5.12, 5.12]^n (meta[:lb](n) = fill(-5.12, n), meta[:ub](n) = fill(5.12, n)).
-- Gradienten-Wrapper: grad (nicht-in-place) und gradient! (in-place) für Optim.jl, NLopt und Hessian-Methoden (Zygote.hessian mit Unterstützung für ForwardDiff.Dual).
-- Tests: 74/74 Tests in test/runtests.jl:
-    - Rosenbrock (28): Funktionswerte (f([0.5, 0.5]) ~ 6.5), Gradienten, numerische Gradientengenauigkeit, Randfälle (NaN, Inf, 1e-308), Eigenschaften (multimodal, nicht-konvex, bounded), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [1.0, 1.0].
-    - Sphere (28): Funktionswerte (f([1.0, 1.0]) ~ 2.0), Gradienten, numerische Gradientengenauigkeit, Eigenschaften (unimodal, konvex, bounded), Startpunkt meta[:start](2) = [0.0, 0.0], Minimum meta[:min_position](2) = [0.0, 0.0].
-    - Filter (4): Testet filter_testfunctions für konvexe/multimodale Funktionen.
-    - Eigenschaften (6): Testet add_property, einschließlich bounded.
-    - Skalierbare Metadaten (8): Testet meta[:lb](n), meta[:ub](n), meta[:start](n), meta[:min_position](n) für n=3.
-- Demos: Fünf Skripte in examples/ (10-15 Zeilen):
-    - Optimize_all_functions.jl: Optimiert alle Funktionen mit L-BFGS, verwendet tf.grad, ftol_rel=1e-6, meta[:start](n).
-    - Compare_optimization_methods.jl: Vergleicht Gradient Descent und L-BFGS bei Rosenbrock, verwendet tf.grad, ftol_rel=1e-6, meta[:start](n).
-    - List_all_available_test_functions_and_their_properties.jl: Listet Funktionen, Startpunkte, Minima, Eigenschaften.
-    - Optimize_with_nlopt.jl: Optimiert Rosenbrock mit NLopt's LD_LBFGS, ftol_rel=1e-6, meta[:lb](n), meta[:ub](n).
-    - Compute_hessian_with_zygote.jl: Zeigt 3 Newton-Schritte bei Rosenbrock, korrigiert für ForwardDiff.Dual-Unterstützung.
-- Ladezeit: Ziel < 0.5 Sekunden für zwei Funktionen, optimiert mit TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl.
-- Kompatibilität: Julia 1.11.5+ ist installiert und bestätigt, reiner Julia-Code.
-- Dokumentation: Readme.txt (reiner Text, kein Markdown), erweitert mit Abschnitten für Testfunktionen, Demos, Tests, Features, Contributing und Lizenz. Dateikommentare mit Pfad, Zweck, Kontext, Zeitstempel.
-- Fehlerbehandlung: @assert durch throw(ArgumentError(...)) ersetzt für Robustheit.
-- Neue Änderungen (Stand 13. Juli 2025):
-    - meta[:properties] wird nun in lowercase gespeichert, um Konsistenz mit has_property zu gewährleisten.
-    - filter_testfunctions zu einer einzigen Methode mit Default-Parameter test_functions=TEST_FUNCTIONS vereinfacht.
-    - Docstrings für interne Funktionen (has_property, add_property, use_testfunction, filter_testfunctions) entfernt, um Dokumentations-Warnungen zu vermeiden.
-    - Dimension-Validierung (n >= 2) in meta-Funktionen von Rosenbrock hinzugefügt, um ungültige Eingaben zu verhindern.
-    - Korrektur in test/runtests.jl: Test für SPHERE_FUNCTION.meta[:ub](3) angepasst, um die korrekte obere Schranke [5.12, 5.12, 5.12] zu erwarten.
-    - Korrektur in Optimize_all_functions.jl und Compare_optimization_methods.jl: Verwendung von tf.grad statt tf.gradient! für Optim.jl-Kompatibilität.
-    - Eigenschaft "bounded" zu meta[:properties] in rosenbrock.jl und sphere.jl hinzugefügt, um Konsistenz mit Tests zu gewährleisten.
-- Vergleich mit anderen Paketen:
-    - Opfunu: 500+ Python-Benchmark-Funktionen, keine Gradienten (interner Vergleich, nicht öffentlich).
-    - CUTEst: Komplexe Installation, unser Paket ist Julia-nativ.
-    - Optim.jl, NLopt, Manopt.jl, JuMP/Ipopt, NLSolvers.jl: Kompatibel, unser Paket fügt Testfunktionen hinzu.
+Aktueller Stand
+Das Paket NonlinearOptimizationTestFunctionsInJulia bietet Testfunktionen für nichtlineare Optimierung: rosenbrock, sphere, ackley, axisparallelhyperellipsoid und rastrigin, implementiert in src/functions/. Diese Funktionen stammen aus Test functions for optimization needs (Molga & Smutnicki, 2005). Die Tests in test/runtests.jl und test/test_project.jl decken Funktionswerte, Gradienten, Hessians, Metadaten, Edge Cases und Filterfunktionen ab. Alle Tests sind erfolgreich:
+- Cross-Function Tests: 39/39
+- Rosenbrock Tests: 7/7
+- Sphere Tests: 7/7
+- Ackley Tests: 6/6
+- AxisParallelHyperEllipsoid Tests: 16/16
+- Manual Tests (test_project.jl): 32/32
+Keine neuen Fehler oder Stabilitätsprobleme sind aufgetreten. Die Demos in examples/ (Optimize_all_functions.jl, Compare_optimization_methods.jl, Optimize_with_nlopt.jl, List_all_available_test_functions_and_their_properties.jl, Compute_hessian_with_zygote.jl) zeigen die Verwendung der Testfunktionen mit Optim.jl (L-BFGS, Gradient Descent) und NLopt (LD_LBFGS).
 
-Hauptziele:
-- Skalierbarkeit: Über include_testfunctions.jl und TEST_FUNCTIONS, meta[:lb](n), meta[:ub](n) für beliebige Dimensionen.
-- Transparenz: Interne Details durch TestFunction und meta Dict verborgen.
-- Robustheit: Präzise Gradienten, Stabilität bei [1e-308, 1e-308], robuste Fehlerbehandlung.
-- Benutzerfreundlichkeit: Minimale Demos (10-15 Zeilen), klare Dokumentation.
+Vergleich mit anderen Projekten
+Das Paket zielt darauf ab, Vergleichsprojekte (z. B. Julia-Pakete wie OptimizationProblems.jl, Python-Bibliotheken wie SciPy, MATLAB-Toolboxes) in jedem Detail zu übertreffen, einschließlich Funktionsumfang, Testabdeckung, Performance und Dokumentation. Ein zyklischer Vergleichsprozess wird etabliert, bei dem die Anzahl verglichener Projekte schrittweise steigt. Schwächen in Vergleichsprojekten (z. B. fehlende Gradienten, eingeschränkte Skalierbarkeit, unvollständige Dokumentation) werden analysiert, um gezielte Verbesserungen umzusetzen. Der Fokus liegt auf:
+- Vollständige Implementierung aller Testfunktionen aus Test functions for optimization needs (Molga & Smutnicki, 2005): sphere, rosenbrock, ackley, axisparallelhyperellipsoid, rastrigin (implementiert); schwefel, griewank, michalewicz, langermann, shekel, branin, goldsteinprice, hartmann, sixhumpcamelback, shubert (nicht implementiert).
+- Umfassende Tests für Funktionswerte, Gradienten, gradient!, Metadaten, Edge Cases und Optimierung.
+- Hochwertige Dokumentation mit MathJax für die Registrierung im Julia General Registry ist erst mal weniger wichtig
 
-Aufgabenliste:
-- Dokumentation mit Documenter.jl für HTML-Ausgabe verbessern.
-- Paket im Julia General Registry registrieren.
-- Ladezeit testen:
-    @time include("src/NonlinearOptimizationTestFunctionsInJulia.jl")
-    @time sphere([1.0, 1.0])
-    Ziel: < 0.5 Sekunden.
+Entscheidungen und Begründungen
+- Priorität der Rastrigin-Tests: Die Implementierung von test/rastrigin_tests.jl wurde als dringendster nächster Schritt priorisiert, da rastrigin.jl bereits in src/include_testfunctions.jl eingebunden ist, aber die Testdatei fehlt. Dies gewährleistet eine vollständige Testabdeckung und unterstützt den schnellen Ausbau der Funktionen aus Molga & Smutnicki (2005).
+- Registrierung im Julia General Registry: Das Paket soll im Julia General Registry registriert werden, um es über Pkg.add("NonlinearOptimizationTestFunctionsInJulia") verfügbar zu machen. Dies erfordert eine vollständige Dokumentation (Documenter.jl, MathJax), Docstrings für interne Funktionen und ein korrektes Project.toml.
+- Eigenschaft in_molga_smutnicki_2005: Eine neue Metadaten-Eigenschaft (meta[:in_molga_smutnicki_2005]) wird für alle Testfunktionen eingeführt, um zu markieren, ob sie aus Test functions for optimization needs stammen. Dies ermöglicht Nutzern, die Testsuite gezielt für diese Funktionen durchzulaufen (z. B. via filter_testfunctions(tf -> tf.meta[:in_molga_smutnicki_2005])).
+- Vermeidung von Namenskonflikten: Gezielte Imports (using NonlinearOptimizationTestFunctionsInJulia: ...) wurden gewählt, um Konflikte mit exportierten Konstanten (z. B. AXISPARALLELHYPERELLIPSOID_FUNCTION) zu verhindern, statt Funktionsdateien direkt in Testdateien einzubinden. Lowercase-Namenskonvention ohne Unterstriche (z. B. axisparallelhyperellipsoid) wurde eingeführt, um einheitliche und konfliktfreie Namen für Dateinamen, Funktionen und meta[:name] zu gewährleisten.
+- Verwendung von tf.gradient! statt tf.grad: Optim.jl (Version 1.13.2) unterstützt nur in-place Gradienten (tf.gradient!, Signatur g!(G, x) -> Nothing), nicht nicht-in-place Gradienten (tf.grad). Tests und Demos wurden auf tf.gradient! umgestellt, um Kompatibilität zu gewährleisten.
+- 4-Leerzeichen-Einrückung für Code-Blöcke: Dreifache Backticks wurden verworfen, da sie Renderprobleme in der HTML-Dokumentation verursachen. 4-Leerzeichen-Einrückung wurde gewählt, um konsistente Darstellung mit Documenter.jl zu gewährleisten.
 
-Nächste Schritte:
-- Documenter.jl für HTML-Dokumentation hinzufügen.
-- Ladezeit testen und optimieren, falls nötig.
-- Commit:
-    git add src/NonlinearOptimizationTestFunctionsInJulia.jl src/functions/rosenbrock.jl src/functions/sphere.jl test/runtests.jl docs/interim_reports/Zwischenbericht.txt Readme.txt
-    git commit -m "meta[:properties] in lowercase, filter_testfunctions vereinfacht, Docstrings für interne Funktionen entfernt, Dimension-Validierung für Rosenbrock meta-Funktionen hinzugefügt, Test für SPHERE_FUNCTION.meta[:ub] korrigiert, tf.grad in Optimize_all_functions.jl und Compare_optimization_methods.jl verwendet, bounded zu meta[:properties] hinzugefügt, Zwischenbericht aktualisiert, Zeitstempel auf 13. Juli 2025, 23:00 PM CEST"
-    git push origin main
+Probleme
+- Fehlende Tests für rastrigin: Die Testdatei test/rastrigin_tests.jl ist noch nicht implementiert, obwohl rastrigin.jl in src/include_testfunctions.jl eingebunden ist. Tests sollten Funktionswerte, Gradienten, gradient!, Metadaten, Edge Cases und Optimierung mit Optim.jl abdecken.
+- Fehlende Testfunktionen aus Molga & Smutnicki: Nicht alle Funktionen aus Test functions for optimization needs sind implementiert (fehlend: schwefel, griewank, michalewicz, langermann, shekel, branin, goldsteinprice, hartmann, sixhumpcamelback, shubert). Diese sollten schnell umgesetzt werden, um den Funktionsumfang gegenüber Vergleichsprojekten zu erweitern.
+- Fehlende Metadaten-Eigenschaft: Die Eigenschaft meta[:in_molga_smutnicki_2005] fehlt in den Metadaten der Testfunktionen, was die Filterung für Molga & Smutnicki-Funktionen erschwert.
+- Tests für höhere Dimensionen: Die Tests in runtests.jl und test/test_project.jl sind auf n=2 und n=3 beschränkt. Tests für n=10 und n=100 fehlen, um die Skalierbarkeit zu prüfen.
+- Dokumentation für Registrierung: Docstrings für interne Funktionen (filter_testfunctions, add_property, has_property, use_testfunction) fehlen, was für die Registrierung im Julia General Registry erforderlich ist. Mathematische Formeln in meta[:math] (z. B. f(x) = \sum_{i=1}^{n-1} [100(x_{i+1} - x_i^2)^2 + (1 - x_i)^2]) werden in der HTML-Dokumentation nicht optimal gerendert. MathJax sollte implementiert werden.
+- Renderprobleme in der Dokumentation: Code-Blöcke mit dreifachen Backticks verursachen Inkonsistenzen in der HTML-Dokumentation. 4-Leerzeichen-Einrückungen sind erforderlich.
+- Fehlendes Project.toml: Eine vollständige Project.toml-Datei mit Metadaten (Name, Version, Abhängigkeiten) fehlt für die Registrierung im Julia General Registry.
 
-Verbesserungsvorschläge:
-- Dokumentation: Documenter.jl für HTML-Dokumentation verwenden.
-- Registry: TEST_FUNCTIONS in src/NonlinearOptimizationTestFunctionsInJulia.jl für schnellere Ladezeiten implementiert.
-- Tests: Erweiterung um weitere Testfunktionen und komplexere Szenarien.
-- Zukünftige Verbesserungsvorschläge mit geringer Priorität:
-    - Optionaler gradient!-Parameter im TestFunction-Konstruktor für benutzerdefinierte In-Place-Gradienten.
-    - Hinzufügen eines README.md mit minimaler Formatierung (vier Leerzeichen für Code, ## für Header) für bessere GitHub-Darstellung.
-    - Verbesserte Fehlerbehandlung in Demos, z. B. try-catch statt isdefined in Optimize_with_nlopt.jl.
-    - Modularisierung von test/runtests.jl in separate Dateien (test_rosenbrock.jl, test_sphere.jl, test_filter.jl) für bessere Wartbarkeit.
-    - Logging von Demo-Ausgaben in eine .txt-Datei für persistente Ergebnisse.
+Verbesserungsvorschläge
+1. Erstellung von rastrigin_tests.jl:
+   Erstelle test/rastrigin_tests.jl, das an die Struktur von rosenbrock_tests.jl, sphere_tests.jl, ackley_tests.jl und axisparallelhyperellipsoid_tests.jl angelehnt ist. Teste Funktionswerte, Gradienten, gradient!, Metadaten, Edge Cases und Optimierung mit Optim.jl. Beispiel:
 
-Begründung:
-- Neue Struktur: Vereinfacht TestFunction (4 Felder), KISS-konform.
-- Suchbereiche: Für Rosenbrock und Sphere als Funktionen meta[:lb](n), meta[:ub](n) implementiert, konsistent mit Standards.
-- Fehlerbehandlung: throw(ArgumentError(...)) sorgt für Robustheit.
-- ForwardDiff-Unterstützung: Behebt Compute_hessian_with_zygote.jl.
-- Demos: Minimal (10-15 Zeilen), gradientenbasiert, Julia-nativ, mit Toleranzen.
-- Reiner Text: Readme.txt und Zwischenbericht.txt vermeiden Markdown-Probleme.
-- Dateikommentare: Verbessern Transparenz und Wartbarkeit.
-- Opfunu: Nur interner Vergleich, nicht öffentlich.
-- KISS: Fokus auf Struktur, Tests und Robustheit.
+    using Test, Optim, ForwardDiff, LinearAlgebra
+    using NonlinearOptimizationTestFunctionsInJulia: RASTRIGIN_FUNCTION, rastrigin, rastrigin_gradient
 
-Dokumentation Fortschritte (Stand Juli 2025)
+    function finite_difference_gradient(f, x, h=1e-6)
+        n = length(x)
+        grad = zeros(n)
+        for i in 1:n
+            x_plus = copy(x)
+            x_minus = copy(x)
+            x_plus[i] += h
+            x_minus[i] -= h
+            grad[i] = (f(x_plus) - f(x_minus)) / (2h)
+        end
+        return grad
+    end
 
-Überblick
-Die Dokumentation für NonlinearOptimizationTestFunctionsInJulia wurde mit Documenter.jl erfolgreich eingerichtet. Die Markdown-Dateien (index.md, installation.md, functions.md, demos.md, api.md) wurden im Verzeichnis docs/src/ erstellt, und die HTML-Dokumentation wird in docs/build/ generiert. Alle Dateien verwenden vier Leerzeichen für Codeblöcke, ## für Abschnittsheader und minimierte Leerzeilen, wie im ursprünglichen Zwischenbericht gefordert.
+    @testset "Rastrigin Tests" begin
+        tf = RASTRIGIN_FUNCTION
+        @test_throws ArgumentError rastrigin(Float64[])
+        @test isnan(rastrigin([NaN]))
+        @test isinf(rastrigin([Inf]))
+        @test isfinite(rastrigin([1e-308]))
+        @test tf.meta[:name] == "rastrigin"
+        @test tf.meta[:in_molga_smutnicki_2005] == true
+        @test tf.meta[:start](2) == [1.0, 1.0]
+        @test tf.meta[:min_position](2) == [0.0, 0.0]
+        @test tf.meta[:min_value] ≈ 0.0 atol=1e-6
+        @test tf.meta[:lb](2) == [-5.12, -5.12]
+        @test tf.meta[:ub](2) == [5.12, 5.12]
+        result = optimize(tf.f, tf.gradient!, tf.meta[:start](2), LBFGS(), Optim.Options(f_reltol=1e-6))
+        @test Optim.minimum(result) < 1e-5
+        @test Optim.minimizer(result) ≈ tf.meta[:min_position](2) atol=1e-3
+    end
 
-Behebte Fehler
-Mehrere Fehler wurden während der Einrichtung behoben:
-- Falsches Verzeichnis: Ein anfänglicher Fehler (No such file or directory: docs/docs/make.jl) wurde durch Verschieben von make.jl nach docs/ korrigiert.
-- Fehlende Markdown-Dateien: Der Fehler 'installation.md' is not an existing page! wurde durch Erstellen der Markdown-Dateien in docs/src/ behoben.
-- Modul nicht gefunden: Der Fehler Package NonlinearOptimizationTestFunctionsInJulia not found wurde durch Aktivieren der Projektumgebung mit Pkg.activate(".") gelöst.
-- Syntaxfehler in make.jl: Ein ParseError aufgrund eines fehlenden Kommas nach warnonly = [:missing_docs] wurde durch Korrektur der Syntax behoben.
-- Fehlende Docstrings: Eine Warnung über fünf fehlende Docstrings (filter_testfunctions, add_property, has_property, use_testfunction) wurde durch Entfernen der Docstrings für interne Funktionen behoben, um den Build sauber abzuschließen.
+   Füge in test/include_testfiles.jl ein:
 
-Behandlung der Docstring-Warnung
-Die Warnung über fehlende Docstrings betraf interne Hilfsfunktionen (filter_testfunctions, add_property, has_property, use_testfunction), die nicht für die öffentliche Dokumentation relevant sind. Die Docstrings wurden entfernt, um die Warnung zu beseitigen, ohne die Funktionalität der Dokumentation zu beeinträchtigen. Die Entscheidung, ob diese Funktionen exportiert und dokumentiert werden sollen, wird für eine spätere Veröffentlichung in der Julia General Registry getroffen.
+    include("rastrigin_tests.jl")
+
+2. Implementierung der Metadaten-Eigenschaft in_molga_smutnicki_2005:
+   Füge meta[:in_molga_smutnicki_2005] zu allen Testfunktionen hinzu (true für rosenbrock, sphere, ackley, axisparallelhyperellipsoid, rastrigin; false für andere). Ermögliche Filterung in Tests/Demos, z. B.:
+
+    @test length(filter_testfunctions(tf -> tf.meta[:in_molga_smutnicki_2005])) == 5
+
+3. Implementierung aller Testfunktionen aus Molga & Smutnicki:
+   Implementiere die restlichen Funktionen (schwefel, griewank, michalewicz, langermann, shekel, branin, goldsteinprice, hartmann, sixhumpcamelback, shubert) in src/functions/, mit entsprechenden Tests in test/. Beispiel für Griewank:
+
+    function griewank(x::Vector{T}) where {T<:Union{Real, ForwardDiff.Dual}}
+        length(x) >= 1 || throw(ArgumentError("Griewank requires at least 1 dimension"))
+        any(isnan.(x)) && return T(NaN)
+        any(isinf.(x)) && return T(Inf)
+        term1 = sum(x[i]^2 for i in 1:length(x)) / 4000
+        term2 = prod(cos(x[i] / sqrt(i)) for i in 1:length(x))
+        return term1 - term2 + 1
+    end
+
+4. Tests für höhere Dimensionen hat für funktionen die gängiger weise nicht in höheren dimensionen betrieben werden kaum eine bedeutung
+   Tests für n=10 und n=100 in runtests.jl und test/test_project.jl hinzufügen, um die Skalierbarkeit zu prüfen ist also eher unwichtig
+
+    @testset "High-Dimensional Tests" begin
+        for tf in values(TEST_FUNCTIONS)
+            result = optimize(tf.f, tf.gradient!, tf.meta[:start](10), LBFGS(), Optim.Options(f_reltol=1e-6))
+            @test Optim.minimum(result) < 1e-5
+            @test Optim.minimizer(result) ≈ tf.meta[:min_position](10) atol=1e-3
+            result_n100 = optimize(tf.f, tf.gradient!, tf.meta[:start](100), LBFGS(), Optim.Options(f_reltol=1e-6))
+            @test Optim.minimum(result_n100) < 1e-5
+            @test Optim.minimizer(result_n100) ≈ tf.meta[:min_position](100) atol=1e-3
+        end
+    end
+
+5. Vorbereitung für Julia General Registry:
+   Erstelle/aktualisiere Project.toml mit Metadaten (Name, Version, Abhängigkeiten). Füge Docstrings für interne Funktionen hinzu. Erstelle Dokumentation mit Documenter.jl und MathJax. Teste das Paket lokal mit Pkg.test("NonlinearOptimizationTestFunctionsInJulia"). Reiche das Paket beim Julia General Registry via Registrator.jl ein. Beispiel für Project.toml:
+
+    name = "NonlinearOptimizationTestFunctionsInJulia"
+    uuid = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    version = "0.1.0"
+
+    [deps]
+    Optim = "429524aa-4259-5c8e-9a0d-3b6a4b6c6a6a"
+    ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+    LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+    [compat]
+    Optim = "1.13"
+    ForwardDiff = "0.10"
+    julia = "1.10"
+
+6. Dokumentation:
+   - Docstrings wieder einführen: Docstrings für interne Funktionen wie has_property sollten für die Julia General Registry hinzugefügt werden:
+
+    """
+        has_property(tf::TestFunction, prop::String)
+    Check if the test function tf has the specified property prop.
+    Throws an ArgumentError if prop is not in VALID_PROPERTIES.
+    """
+    function has_property(tf::TestFunction, prop::String)
+        lprop = lowercase(prop)
+        lprop in VALID_PROPERTIES || throw(ArgumentError("Invalid property: $lprop"))
+        return lprop in tf.meta[:properties]
+    end
+
+   - README.md aktualisieren: Eine minimalistische README.md für GitHub mit Installations- und Nutzungsanweisungen:
+
+    NonlinearOptimizationTestFunctionsInJulia
+    A Julia package for nonlinear optimization test functions.
+
+    Installation
+
+    using Pkg
+    Pkg.add("NonlinearOptimizationTestFunctionsInJulia")
+
+    Usage
+
+    using NonlinearOptimizationTestFunctionsInJulia, Optim
+    tf = ROSENBROCK_FUNCTION
+    result = optimize(tf.f, tf.gradient!, tf.meta[:start](2), LBFGS(), Optim.Options(f_reltol=1e-6))
+    println("Minimum: $(Optim.minimum(result)), Minimizer: $(Optim.minimizer(result))")
+
+   - GitHub Pages einrichten: Ein GitHub Actions-Workflow für automatische Dokumentationsveröffentlichung mit Documenter.jl implementieren.
+   - MathJax für Formeln: MathJax in der HTML-Dokumentation einbinden, um Formeln wie f(x) = \sum_{i=1}^{n-1} [100(x_{i+1} - x_i^2)^2 + (1 - x_i)^2] korrekt zu rendern.
+
+7. Performance-Optimierung nie unwichtig aber Stabilität, KISS, wartbarbeit. sind wesentlich wichtiger
+   Gradientenberechnung optimieren, indem Zwischenwerte (z. B. x[1:n-1].^2 in rosenbrock_gradient) wiederverwendet werden, als optionale Idee.
+
+Warnungen: Strategische Hinweise für die Zukunft
+1. Priorisierung der Testfunktionen: Neue Testfunktionen (z. B. rastrigin) sollten sofort mit vollständigen Tests implementiert werden, um den Funktionsumfang gegenüber Vergleichsprojekten schnell zu erweitern.
+2. Vorbereitung für Julia General Registry: Docstrings, Project.toml und Dokumentation vor der Registrierung vervollständigen, um Community-Standards zu erfüllen.
+3. Metadaten-Eigenschaft in_molga_smutnicki_2005: Sicherstellen, dass alle Testfunktionen diese Eigenschaft korrekt gesetzt haben, um gezielte Tests für Molga & Smutnicki-Funktionen zu ermöglichen.
+4. Vermeidung von Namenskonflikten durch gezielte Imports: Gezielte Imports (using NonlinearOptimizationTestFunctionsInJulia: ...) verwenden, um Konflikte mit exportierten Konstanten zu verhindern.
+5. Verwendung von tf.gradient!: Tests und Demos ausschließlich mit tf.gradient! erstellen, da Optim.jl nicht-in-place Gradienten nicht unterstützt.
 
 Nächste Schritte
-- Docstring-Integration: Für die Julia General Registry müssen die Docstrings für filter_testfunctions, add_property, has_property, und use_testfunction entweder eingebunden (durch Export und @docs-Blöcke) oder dauerhaft entfernt werden, um warnonly = false zu verwenden.
-- GitHub Pages: Einrichtung eines GitHub Actions-Workflows (docs.yml) für die automatische Veröffentlichung der Dokumentation auf GitHub Pages.
-- Doctests: Hinzufügen von @jldoctest-Blöcken in den Markdown-Dateien, um Beispiele wie rosenbrock([0.5, 0.5]) zu validieren.
-- Finale Überprüfung: Testen der Dokumentation mit warnonly = false, um sicherzustellen, dass alle Anforderungen für die Julia General Registry erfüllt sind.
-
-Testen der Dokumentation
-Die Dokumentation wird wie folgt generiert:
-    using Pkg
-    Pkg.activate(".")
-    include("docs/make.jl")
-Die generierte HTML-Dokumentation befindet sich in docs/build/. Öffne index.html im Browser, um das Ergebnis zu überprüfen.
+- Priorität 1: Implementiere test/rastrigin_tests.jl und binde es in include_testfiles.jl ein, um die Testabdeckung für rastrigin zu vervollständigen.
+- Priorität 2: Füge meta[:in_molga_smutnicki_2005] zu allen Testfunktionen hinzu und implementiere Tests/Demos zur Filterung dieser Funktionen.
+- Priorität 3: Implementiere die restlichen Testfunktionen aus Test functions for optimization needs (schwefel, griewank, michalewicz, langermann, shekel, branin, goldsteinprice, hartmann, sixhumpcamelback, shubert) mit Tests.
+- Priorität 4: Füge Tests für n=10 und n=100 in runtests.jl und test/test_project.jl hinzu nur wenns leicht machbar und sinnfoll ist.
+- Priorität 5: Vorbereite das Paket für die Registrierung im Julia General Registry: Erstelle Project.toml, füge Docstrings hinzu, finalisiere Dokumentation mit Documenter.jl und MathJax, richte GitHub Pages ein ist nachrangig.
+- Untersuche die tf.grad-Inkompatibilität mit Optim.jl weiter, möglicherweise durch ein Issue im Optim.jl-GitHub-Repository ist komplett unwichtig!

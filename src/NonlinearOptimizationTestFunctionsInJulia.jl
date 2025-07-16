@@ -1,14 +1,13 @@
 # src/NonlinearOptimizationTestFunctionsInJulia.jl
 # Purpose: Defines the core module for nonlinear optimization test functions.
 # Context: Provides TestFunction structure, metadata validation, and function registry.
-# Last modified: 13. Juli 2025, 10:45 AM CEST
+# Last modified: 16. Juli 2025, 12:32 PM CEST
 
 module NonlinearOptimizationTestFunctionsInJulia
 
 using LinearAlgebra
 using ForwardDiff
 
-# Zulässige Eigenschaften
 const VALID_PROPERTIES = Set([
     "unimodal", "multimodal", "highly multimodal", "deceptive",
     "convex", "non-convex", "quasi-convex", "strongly convex",
@@ -16,7 +15,6 @@ const VALID_PROPERTIES = Set([
     "differentiable", "scalable", "continuous", "bounded", "has_constraints"
 ])
 
-# Struktur für Testfunktionen
 struct TestFunction
     f::Function
     grad::Function
@@ -33,16 +31,12 @@ struct TestFunction
     end
 end
 
-# Checks if the test function `tf` has the specified property `prop`.
-# Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
 function has_property(tf::TestFunction, prop::String)
     lprop = lowercase(prop)
     lprop in VALID_PROPERTIES || throw(ArgumentError("Invalid property: $lprop"))
     return lprop in tf.meta[:properties]
 end
 
-# Adds the property `prop` to the test function `tf` and returns a new TestFunction.
-# Throws an `ArgumentError` if `prop` is not in `VALID_PROPERTIES`.
 function add_property(tf::TestFunction, prop::String)
     lprop = lowercase(prop)
     lprop in VALID_PROPERTIES || throw(ArgumentError("Invalid property: $lprop"))
@@ -51,26 +45,19 @@ function add_property(tf::TestFunction, prop::String)
     return TestFunction(tf.f, tf.grad, new_meta)
 end
 
-# Evaluates the test function `tf` and its gradient at point `x`.
-# Throws an `ArgumentError` if `x` is empty.
-# Returns a named tuple with fields `f` (function value) and `grad` (gradient).
 function use_testfunction(tf::TestFunction, x::Vector{T}) where {T<:Union{Real, ForwardDiff.Dual}}
     isempty(x) && throw(ArgumentError("Input vector x must not be empty"))
     return (f=tf.f(x), grad=tf.grad(x))
 end
 
-# Filters test functions from `test_functions` based on the given predicate.
 function filter_testfunctions(predicate::Function, test_functions=TEST_FUNCTIONS)
     return [tf for tf in values(test_functions) if predicate(tf)]
 end
 
-# Dictionary für alle Testfunktionen
 const TEST_FUNCTIONS = Dict{String, TestFunction}()
 
-# Einzige Include-Anweisung
 include("include_testfunctions.jl")
 
-# Sammle alle TestFunction-Konstanten mit Try-Catch
 for name in names(@__MODULE__, all=true)
     try
         if endswith(string(name), "_FUNCTION")
@@ -84,7 +71,6 @@ for name in names(@__MODULE__, all=true)
     end
 end
 
-# Sicherer Export von Funktionen, Gradienten und Konstanten
 for tf in values(TEST_FUNCTIONS)
     export_name = Symbol(lowercase(tf.meta[:name]))
     export_gradient = Symbol(lowercase(tf.meta[:name]) * "_gradient")
