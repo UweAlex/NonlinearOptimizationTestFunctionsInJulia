@@ -1,12 +1,14 @@
 # test/runtests.jl
 # Purpose: Entry point for running all tests in NonlinearOptimizationTestFunctionsInJulia.
 # Context: Contains cross-function tests and includes function-specific tests via include_testfiles.jl.
-# Last modified: 16. Juli 2025, 13:21 PM CEST
+# Last modified: 19 July 2025
 
-using Test, ForwardDiff, Zygote, LinearAlgebra
+using Test, ForwardDiff, Zygote
 using NonlinearOptimizationTestFunctionsInJulia
 using Optim
+using Random
 
+# Helper function for numerical gradient via finite differences
 function finite_difference_gradient(f, x, h=1e-6)
     n = length(x)
     grad = zeros(n)
@@ -21,60 +23,65 @@ function finite_difference_gradient(f, x, h=1e-6)
 end
 
 @testset "NonlinearOptimizationTestFunctionsInJulia Cross-Function Tests" begin
-    @testset "Metadata Tests" begin
-        @test ROSENBROCK_FUNCTION.meta[:name] == "rosenbrock"
-        @test ROSENBROCK_FUNCTION.meta[:lb](2) == fill(-5.0, 2)
-        @test ROSENBROCK_FUNCTION.meta[:ub](2) == fill(5.0, 2)
-        @test SPHERE_FUNCTION.meta[:name] == "sphere"
-        @test SPHERE_FUNCTION.meta[:lb](2) == fill(-5.12, 2)
-        @test SPHERE_FUNCTION.meta[:ub](2) == fill(5.12, 2)
-        @test ACKLEY_FUNCTION.meta[:name] == "ackley"
-        @test ACKLEY_FUNCTION.meta[:lb](2) == fill(-5.0, 2)
-        @test ACKLEY_FUNCTION.meta[:ub](2) == fill(5.0, 2)
-        @test AXISPARALLELHYPERELLIPSOID_FUNCTION.meta[:name] == "axisparallelhyperellipsoid"
-        @test AXISPARALLELHYPERELLIPSOID_FUNCTION.meta[:lb](2) == fill(-Inf, 2)
-        @test AXISPARALLELHYPERELLIPSOID_FUNCTION.meta[:ub](2) == fill(Inf, 2)
-        @test RASTRIGIN_FUNCTION.meta[:name] == "rastrigin"
-        @test RASTRIGIN_FUNCTION.meta[:lb](2) == fill(-5.12, 2)
-        @test RASTRIGIN_FUNCTION.meta[:ub](2) == fill(5.12, 2)
-        @test GRIEWANK_FUNCTION.meta[:name] == "griewank"
-        @test GRIEWANK_FUNCTION.meta[:lb](2) == fill(-5.0, 2)
-        @test GRIEWANK_FUNCTION.meta[:ub](2) == fill(5.0, 2)
-    end
-
-    @testset "Scalable Metadata Tests" begin
-        @test ROSENBROCK_FUNCTION.meta[:lb](3) == fill(-5.0, 3)
-        @test ROSENBROCK_FUNCTION.meta[:ub](3) == fill(5.0, 3)
-        @test ROSENBROCK_FUNCTION.meta[:start](3) == fill(0.0, 3)
-        @test ROSENBROCK_FUNCTION.meta[:min_position](3) == fill(1.0, 3)
-        @test SPHERE_FUNCTION.meta[:lb](3) == fill(-5.12, 3)
-        @test SPHERE_FUNCTION.meta[:ub](3) == fill(5.12, 3)
-        @test SPHERE_FUNCTION.meta[:start](3) == fill(0.0, 3)
-        @test SPHERE_FUNCTION.meta[:min_position](3) == fill(0.0, 3)
-        @test ACKLEY_FUNCTION.meta[:lb](3) == fill(-5.0, 3)
-        @test ACKLEY_FUNCTION.meta[:ub](3) == fill(5.0, 3)
-        @test ACKLEY_FUNCTION.meta[:start](3) == fill(1.0, 3)
-        @test ACKLEY_FUNCTION.meta[:min_position](3) == fill(0.0, 3)
-        @test AXISPARALLELHYPERELLIPSOID_FUNCTION.meta[:lb](3) == fill(-Inf, 3)
-        @test AXISPARALLELHYPERELLIPSOID_FUNCTION.meta[:ub](3) == fill(Inf, 3)
-        @test AXISPARALLELHYPERELLIPSOID_FUNCTION.meta[:start](3) == fill(1.0, 3)
-        @test AXISPARALLELHYPERELLIPSOID_FUNCTION.meta[:min_position](3) == fill(0.0, 3)
-        @test RASTRIGIN_FUNCTION.meta[:lb](3) == fill(-5.12, 3)
-        @test RASTRIGIN_FUNCTION.meta[:ub](3) == fill(5.12, 3)
-        @test RASTRIGIN_FUNCTION.meta[:start](3) == fill(1.0, 3)
-        @test RASTRIGIN_FUNCTION.meta[:min_position](3) == fill(0.0, 3)
-        @test GRIEWANK_FUNCTION.meta[:lb](3) == fill(-5.0, 3)
-        @test GRIEWANK_FUNCTION.meta[:ub](3) == fill(5.0, 3)
-        @test GRIEWANK_FUNCTION.meta[:start](3) == fill(1.0, 3)
-        @test GRIEWANK_FUNCTION.meta[:min_position](3) == fill(0.0, 3)
-    end
-
     @testset "Filter and Properties Tests" begin
-        @test length(filter_testfunctions(tf -> has_property(tf, "multimodal"))) == 4
+        @test length(filter_testfunctions(tf -> has_property(tf, "multimodal"))) == 9  # 9 multimodal functions
         @test length(filter_testfunctions(tf -> has_property(tf, "convex"))) == 2
-        @test length(filter_testfunctions(tf -> has_property(tf, "differentiable"))) == 6
+        @test length(filter_testfunctions(tf -> has_property(tf, "differentiable"))) == 12  # 12 differentiable functions
         @test has_property(add_property(ROSENBROCK_FUNCTION, "bounded"), "bounded")
     end
+
+    @testset "Edge Cases" begin
+        for tf in values(TEST_FUNCTIONS)
+            n = try
+                length(tf.meta[:min_position](2))
+            catch
+                length(tf.meta[:min_position]())
+            end
+            @test_throws ArgumentError tf.f(Float64[])
+            @test isnan(tf.f(fill(NaN, n)))
+            @test isinf(tf.f(fill(Inf, n)))
+            @test isfinite(tf.f(fill(1e-308, n)))
+        end
+    end
+
+    @testset "Zygote Hessian" begin
+        for tf in [ROSENBROCK_FUNCTION, SPHERE_FUNCTION, AXISPARALLELHYPERELLIPSOID_FUNCTION]
+            x = tf.meta[:start](2)
+            H = Zygote.hessian(tf.f, x)
+            @test size(H) == (2, 2)
+            @test all(isfinite, H)
+        end
+    end
+
+    @testset "Gradient Comparison for Differentiable Functions" begin
+        Random.seed!(1234)
+        differentiable_functions = filter_testfunctions(tf -> has_property(tf, "differentiable"))
+        @test length(differentiable_functions) == 12  # 12 differentiable functions
+        for tf in differentiable_functions
+            n = try
+                length(tf.meta[:min_position](2))
+            catch
+                length(tf.meta[:min_position]())
+            end
+            lb = any(isinf, tf.meta[:lb](n)) ? fill(-100.0, n) : tf.meta[:lb](n)
+            ub = any(isinf, tf.meta[:ub](n)) ? fill(100.0, n) : tf.meta[:ub](n)
+            @testset "$(tf.meta[:name]) Gradient Tests" begin
+                min_pos = tf.meta[:min_position](n)
+                atol = (tf.meta[:name] in ["langermann"]) ? 0.01 : 0.001
+                @test tf.grad(min_pos) ≈ zeros(n) atol=atol
+                for _ in 1:20
+                    x = lb + (ub - lb) .* rand(n)
+                    programmed_grad = tf.grad(x)
+                    numerical_grad = finite_difference_gradient(tf.f, x)
+                    ad_grad = ForwardDiff.gradient(tf.f, x)
+                    @test programmed_grad ≈ numerical_grad atol=1e-3
+                    @test programmed_grad ≈ ad_grad atol=1e-3
+                end
+            end
+        end
+    end
+
+ 
 end
 
 include("include_testfiles.jl")
