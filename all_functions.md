@@ -1,6 +1,6 @@
 # Alphabetical List of Benchmark Functions
 
-Generated automatically on 2025-12-20 from package metadata.
+Generated automatically on 2025-12-21 from package metadata.
 
 Scalable functions are shown with their default dimension (`default_n`). Use `fixed(tf; n=...)` to create fixed-dimension instances.
 

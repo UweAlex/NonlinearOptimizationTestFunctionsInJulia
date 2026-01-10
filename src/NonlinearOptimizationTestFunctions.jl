@@ -274,6 +274,7 @@ export fixed, name, description, math, default_n, source
 export optimization_problem
 
 include("l1_penalty_wrapper.jl")
+include("l2_penalty_wrapper.jl")
 using Optimization
 include("optimization_integration.jl")
 

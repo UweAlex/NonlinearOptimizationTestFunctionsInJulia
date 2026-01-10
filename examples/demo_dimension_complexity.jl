@@ -47,9 +47,7 @@ results = Dict{Int, Float64}()
 for n in dimensions
     # Convert the scalable function to a fixed-dimension instance.
     # fixed(tf_orig; n=n) binds metadata (start, min_position, etc.) to this n.
-    # Use 'local' to declare tf as a local variable within the loop scope,
-    # avoiding the soft scope ambiguity warning in Julia scripts.
-    local tf = fixed(tf_orig; n=n)
+    tf = fixed(tf_orig; n=n)
     
     # Collect evaluations over 3 independent runs for averaging (reduces noise).
     evals = Float64[]
@@ -79,3 +77,8 @@ for n in dimensions
     println("n = $n: Average evaluations = ", round(avg_calls, digits=1))
 end
 
+# Summary message highlighting the trend.
+println("\nSummary: As dimension (n) increases, the number of evaluations grows due to ")
+println("the 'curse of dimensionality' and worsening conditioning. For Rosenbrock, ")
+println("this manifests as slower convergence in the elongated valley. Try higher n ")
+println("for more pronounced effects, but note longer runtimes.")

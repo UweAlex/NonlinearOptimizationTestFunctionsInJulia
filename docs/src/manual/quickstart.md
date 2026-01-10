@@ -1,156 +1,271 @@
-# Quickstart
+# bench.jl – Vergleich SHGO.jl vs SciPy mit PyCall (stabiler Fallback)
 
-## Why This Package?
-
-`NonlinearOptimizationTestFunctions.jl` stands out for serious benchmarking of nonlinear optimization algorithms:
-
-- **Exact analytical gradients** – 10–100× faster and more accurate than finite differences
-- **Over 200 rigorously verified functions** – covering classics from Jamil & Yang, BBOB, CEC, and more
-- **Comprehensive metadata** – known global minima, bounds, recommended starting points, properties, and literature references
-- **Zero boilerplate** – everything needed for reproducible tests is pre-defined and consistency-checked
-
-## Installation
-
-```julia
 using Pkg
-Pkg.add("NonlinearOptimizationTestFunctions")
-```
+Pkg.activate(".")
 
-## First Steps (Complete Beginner)
+# === SciPy-Installation sicherstellen ===
+println("Prüfe/Installiere SciPy in PyCall-Umgebung...")
+try
+    using Conda
+    if !Conda.exists("scipy")
+        println("SciPy wird installiert...")
+        Conda.add("scipy")
+        println("SciPy installiert!")
+    else
+        println("SciPy bereits vorhanden.")
+    end
+catch e
+    @warn "Conda-Installation fehlgeschlagen – versuche manuell: Conda.add(\"scipy\")" exception=e
+end
 
-```julia
+# === Pakete laden ===
+using PyCall
+using SHGO
 using NonlinearOptimizationTestFunctions
+using Printf
+using BenchmarkTools
 
-# List all available functions (by their canonical lowercase name)
-all_names = sort(collect(keys(TEST_FUNCTIONS)))
-println("Total functions: $(length(all_names))")
+println("Initialisiere PyCall...")
+const sp_opt = pyimport("scipy.optimize")   # SciPy laden – sollte jetzt funktionieren
 
-# Pick a simple fixed-dimension function (unimodal, convex)
-tf = TEST_FUNCTIONS["sphere"]  # Access via the dictionary key (the official :name)
+# Setup
+fn_name = "sixhumpcamelback"
+tf = fixed(TEST_FUNCTIONS[fn_name]; n=2)
+n_div = 12
+scipy_n = (n_div + 1)^2   # SciPy n entspricht ungefähr (n_div + 1)^2 Punkten
 
-# Evaluate at the recommended (challenging) starting point
-x = start(tf)                  # Vector deliberately away from the minimum
-println("f(start): ", tf.f(x)) # Large positive value
+println("="^60)
+println("STUFE 1: DIFFERENZ-ANALYSE - $fn_name")
+println("="^60)
 
-# Known global minimum
-println("Global minimum: ", min_value(tf), " at ", min_position(tf))  # 0.0 at zeros
-```
+# --- FUNKTION: Julia Lauf ---
+function run_julia(tf, n_div)
+    res = analyze(tf; n_div=n_div, use_gradient_pruning=true)
+    return res
+end
 
-**Note**: All functions are registered in the dictionary `TEST_FUNCTIONS` using their canonical lowercase name (exactly matching the `:name` field in metadata).  
-This is the most reliable and future-proof way to access them – no need to guess uppercase constant names.
+# --- FUNKTION: SciPy Lauf ---
+function run_scipy(tf, scipy_n)
+    # Python-Funktion Wrapper
+    py_fn(x) = begin
+        julia_x = pyconvert(Vector{Float64}, x)
+        tf.f(julia_x)
+    end
+    
+    py_grad(x) = begin
+        julia_x = pyconvert(Vector{Float64}, x)
+        tf.grad(julia_x)
+    end
+    
+    # Bounds konvertieren – ROBUST FÜR DICT-STRUKTUR
+    bounds = try
+        if hasproperty(tf, :bounds) && tf.bounds isa Dict
+            # Für Dict: über values iterieren (unabhängig von Keys)
+            [(b.lb, b.ub) for b in values(tf.bounds)]
+        elseif hasproperty(tf, :bounds) && tf.bounds isa Vector
+            [(b.lb, b.ub) for b in tf.bounds]
+        elseif hasproperty(tf, :lb) && hasproperty(tf, :ub)
+            [(tf.lb, tf.ub)]
+        else
+            error("Unbekannte Bounds-Struktur: $(typeof(tf.bounds))")
+        end
+    catch e
+        @error "Bounds-Extraktion fehlgeschlagen!" exception=e
+        error("Kann Bounds nicht extrahieren – überprüfe tf.bounds-Struktur.")
+    end
+    
+    # SciPy shgo aufrufen
+    res_py = sp_opt.shgo(py_fn, bounds, n=scipy_n, iters=1, jac=py_grad)
+    return res_py
+end
 
-For convenience, many popular functions also export uppercase constants (e.g., `ROSENBROCK_FUNCTION`, `ACKLEY_FUNCTION`), but the dictionary lookup works for **every** function without exception.
+# --- Julia Benchmarking ---
+println("\n[1/2] Starte Julia Benchmarking...")
+println("      Warm-up läuft...")
+run_julia(tf, n_div)  # Warm-up
 
-## Core Concepts
+println("      Messung läuft...")
+t_jl = @belapsed run_julia($tf, $n_div) samples=3 evals=1
 
-### Fixed vs. Scalable Functions
+# Julia Ergebnis sammeln
+res_jl = run_julia(tf, n_div)
 
-```julia
-n = dim(tf)
-if n == -1
-    println("Scalable function – use fixed(tf; n=...) to set a dimension")
+# --- SciPy Benchmarking ---
+println("\n[2/2] Starte SciPy Benchmarking...")
+println("      Warm-up läuft...")
+try
+    run_scipy(tf, scipy_n)  # Warm-up
+catch e
+    @warn "SciPy Warm-up fehlgeschlagen" exception=e
+end
+
+println("      Messung läuft...")
+t_py_start = time()
+try
+    res_py = run_scipy(tf, scipy_n)
+    t_py = time() - t_py_start
+catch e
+    @error "SciPy Messung fehlgeschlagen!" exception=e
+    t_py = NaN
+    res_py = nothing
+end
+
+# --- Ergebnisse extrahieren ---
+println("\n" * "="^60)
+println("ERGEBNIS-VERGLEICH")
+println("="^60)
+
+# Julia Ergebnisse
+jl_n_basins = res_jl.num_basins
+jl_best_obj = isempty(res_jl.local_minima) ? NaN : minimum(m.objective for m in res_jl.local_minima)
+
+# SciPy Ergebnisse (mit Fehlerbehandlung)
+py_n_basins = try
+    length(pyconvert(Vector, res_py.xl))
+catch
+    0
+end
+
+py_best_obj = try
+    pyconvert(Float64, res_py.fun)
+catch
+    NaN
+end
+
+# Tabelle ausgeben
+println("\n" * "-"^60)
+@printf "%-25s | %-15s | %-15s\n" "Metrik" "SHGO.jl" "SciPy"
+println("-"^60)
+@printf "%-25s | %-15d | %-15d\n" "Gefundene Basins" jl_n_basins py_n_basins
+@printf "%-25s | %-15.8f | %-15.8f\n" "Globales Minimum" jl_best_obj py_best_obj
+@printf "%-25s | %-15.6fs | %-15.6fs\n" "Wall-clock Time" t_jl t_py
+println("-"^60)
+
+# Speedup berechnen
+if isfinite(t_jl) && isfinite(t_py) && t_jl > 0 && t_py > 0
+    speedup = t_py / t_jl
+    if speedup > 1
+        @printf "\n✓ SHGO.jl ist %.2fx schneller als SciPy\n" speedup
+    else
+        @printf "\n⚠ SciPy ist %.2fx schneller als SHGO.jl\n" (1/speedup)
+    end
 else
-    println("Fixed dimension: $n")
+    println("\n⚠ Zeitmessung ungültig (NaN oder Fehler)")
 end
-```
 
-- **Fixed**: Direct metadata access (e.g., `start(tf)`, `min_position(tf)`)
-- **Scalable**: First create a fixed instance with `fixed()`
+println("\n" * "="^60)
 
-```julia
-# Classic Rosenbrock (scalable) – accessed safely via dictionary
-rosen_tf = TEST_FUNCTIONS["rosenbrock"]
 
-# Recommended: uses the package-defined :default_n for literature consistency
-tf_default = fixed(rosen_tf)
 
-# Or choose your own dimension
-tf10 = fixed(rosen_tf; n=10)
-```
+NonlinearOptimizationTestFunctions.jl – Detailed Quick Reference (English)
 
-### Essential Accessors
+1. Property Queries – Most Frequently Used
 
-| Accessor                  | Purpose                                   | Example (Rosenbrock)               |
-|---------------------------|-------------------------------------------|------------------------------------|
-| `name(tf)`                | Canonical name                            | "rosenbrock"                       |
-| `dim(tf_fixed)`           | Dimension (after fixing)                  | 10                                 |
-| `properties(tf)`          | Sorted characteristics                    | ["continuous", "differentiable", ...] |
-| `source(tf)`              | Literature reference                      | "Jamil & Yang (2013, p. XX)"       |
-| `start(tf_fixed)`         | Challenging starting point                | e.g., [-1.2, 1.0, -1.2, ...]       |
-| `min_value(tf_fixed)`     | Known global minimum value                | 0.0                                |
-| `min_position(tf_fixed)`  | Position of global minimum                | ones(n)                            |
-| `lb(tf_fixed)`, `ub(tf_fixed)` | Bounds (if applicable)               | vectors                            |
+properties(tf)                                  
+→ Returns all properties as a sorted Vector{String}
+Example: ["continuous", "differentiable", "multimodal", "scalable", "non-separable"]
 
-### Evaluating Functions and Gradients
+has_property(tf, "scalable")                    
+→ true / false
 
-```julia
-x = start(tf10)
-f_val = tf10.f(x)
+has_property(tf, "has_noise")                   
+→ true for noisy functions (e.g. Quartic)
 
-# Out-of-place gradient (convenient)
-grad = tf10.grad(x)
+has_property(tf, ["multimodal", "non-convex", "bounded"])  
+→ true only if ALL requested properties are present
 
-# In-place gradient (recommended for optimizers – zero allocation)
-g = similar(x)
-tf10.gradient!(g, x)
-```
+Common shortcuts (internally using has_property – this is the recommended way):
+scalable(tf)       === has_property(tf, "scalable")
+is_bounded(tf)     === has_property(tf, "bounded")
+is_noisy(tf)       === has_property(tf, "has_noise")
 
-## Common Workflows
+2. Core Metadata Accessors
 
-### Workflow 1: Unconstrained Optimization
+name(tf)               
+→ Clean lowercase function name
+Example: "rosenbrock", "rastrigin", "ackley"
 
-```julia
-using Optim
+dim(tf)                
+→ -1 = arbitrarily scalable
+→ ≥ 2 = fixed dimension (e.g. 2 for Himmelblau)
 
-tf2 = fixed(TEST_FUNCTIONS["rosenbrock"]; n=2)
-result = optimize(tf2.f, tf2.gradient!, start(tf2), LBFGS())
+default_n(tf)          
+→ Recommended default dimension for scalable functions
+→ Only defined when the function is scalable (most often 2, sometimes 4+)
 
-println("Minimizer: ", minimizer(result))  # ≈ [1.0, 1.0]
-println("Minimum:   ", minimum(result))    # ≈ 0.0
-```
+description(tf)        
+→ Human-readable description (often includes origin & special remarks)
 
-### Workflow 2: Handling Bounds
+math(tf)               
+→ LaTeX formula as raw string
 
-```julia
-tf_bounded = with_box_constraints(fixed(TEST_FUNCTIONS["branin"]))
+source(tf)             
+→ Scientific/literature reference
+Example: "Jamil & Yang (2013, p. 29)"
 
-result = optimize(tf_bounded.f, tf_bounded.gradient!, start(tf_bounded), LBFGS())
-# Automatically respects bounds
-```
+3. Starting Point, Known Solutions & Bounds
 
-### Workflow 3: Building Targeted Benchmark Suites
+start(tf)          or   start(tf, n)  
+→ Recommended starting point (usually far from optimum)
 
-```julia
-# Example: all multimodal functions
-suite = filter_testfunctions(multimodal)
+min_position(tf)   or   min_position(tf, n)  
+→ Position(s) of the global minimum/minima
 
-hard_suite = filter_testfunctions(tf -> multimodal(tf) && bounded(tf) && !convex(tf))
+min_value(tf)      or   min_value(tf, n)  
+→ Function value at the global minimum
 
-for tf_orig in hard_suite[1:10]
-    tf_fixed = fixed(tf_orig)  # Use default_n where defined
-    # Run your optimizer...
-end
-```
+lb(tf)   or   lb(tf, n)     → lower bounds (Vector{Float64})
+ub(tf)   or   ub(tf, n)     → upper bounds
 
-## Tracking Algorithm Performance
+4. Function Evaluation & Analytical Gradient
 
-```julia
-reset_counts!(tf_fixed)
-result = optimize(tf_fixed.f, tf_fixed.gradient!, start(tf_fixed), LBFGS())
+tf.f(x)                
+→ Evaluate objective function → returns Float64
 
-println("Objective calls: ", get_f_count(tf_fixed))
-println("Gradient calls:  ", get_grad_count(tf_fixed))
-```
+tf.grad(x)             
+→ Compute gradient (out-of-place) → returns Vector{Float64}
 
-## Advanced Topics
+tf.gradient!(g, x)     
+→ In-place gradient computation (usually faster & more memory efficient)
 
-- **Arbitrary-precision arithmetic** – use `BigFloat` inputs seamlessly
-- **Noisy functions** – metadata includes special validation rules
+5. Function & Gradient Call Counting (very useful for profiling/benchmarking)
 
-See the full manual for details.
+get_f_count(tf)        
+→ How many times has the objective function been called so far?
 
-## Next Steps
+get_grad_count(tf)     
+→ How many gradient evaluations so far?
+(counts both grad() and gradient!())
 
-- Browse the complete function list: `docs/all_functions.md` (auto-generated)
-- Explore examples in the `examples/` directory
-- All functions are reliably accessible via `TEST_FUNCTIONS["name"]`
+reset_counts!(tf)      
+→ Reset both counters to zero
+→ Practically the only important mutating function!
+→ Always call this before each new optimization experiment
+
+6. Typical Usage Example (copy-paste friendly)
+
+# Get a function (two equivalent ways)
+tf = TEST_FUNCTIONS["rosenbrock"]
+tf = ROSENBROCK_FUNCTION           # uppercase exported constant
+
+# Basic information
+println("Function: ", name(tf))
+println("Dimension: ", dim(tf), " (scalable = ", scalable(tf), ")")
+println("Properties: ", join(properties(tf), ", "))
+println("Source: ", source(tf))
+
+# Prepare experiment
+reset_counts!(tf)                  # very important!
+
+n = dim(tf) < 0 ? default_n(tf) : dim(tf)
+x₀ = start(tf, n)                  # safe for both fixed and scalable
+
+println("Start point: ", x₀)
+println("Known global minimum: ", min_value(tf, n), " at ", min_position(tf, n))
+
+# Evaluate once
+f₀ = tf.f(x₀)
+∇f₀ = tf.grad(x₀)
+
+println("f(x₀) = ", f₀)
+println("Calls so far → f: ", get_f_count(tf), ", ∇: ", get_grad_count(tf))

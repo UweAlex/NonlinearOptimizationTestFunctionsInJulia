@@ -13,6 +13,9 @@ include("Compute_hessian_with_zygote.jl")
 println("----------------------------------------------------------------------", "\n\n", "Compare_optimization_methods.jl")
 include("Compare_optimization_methods.jl")
 
+println("----------------------------------------------------------------------", "\n\n", "demo_dimension_complexity.jl")
+include("demo_dimension_complexity.jl")
+
 
 println("----------------------------------------------------------------------", "\n\n", "example_high_precisison.jl")
 include("example_high_precisison.jl")
@@ -39,7 +42,5 @@ include("print_function_properties.jl")
 println("----------------------------------------------------------------------", "\n\n", "property_statistics.jl")
 include("property_statistics.jl")
 
-println("----------------------------------------------------------------------", "\n\n", "List_all_available_test_functions_and_their_properties.jl")
-include("List_all_available_test_functions_and_their_properties.jl")
 println("----------------------------------------------------------------------", "\n\n", "simpelst.jl")
 include("simpelst.jl")
